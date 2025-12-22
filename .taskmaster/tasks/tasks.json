@@ -501,16 +501,166 @@
         ],
         "status": "pending",
         "subtasks": []
+      },
+      {
+        "id": 50,
+        "title": "Create ConversationExampleExtractor Module",
+        "description": "Build the core module that extracts full conversation context around objections, sales, and techniques from parsed conversation data.",
+        "details": "Create `scripts/analysis/example_extractor.py` with the `ConversationExampleExtractor` class implementing:\n\n1. `get_objection_with_context(objection_id, context_messages=5)` - Returns messages before objection, the objection itself, creator response, and outcome\n2. `get_successful_sale_flow(tier, min_sale_amount=None)` - Gets full opener-to-close conversation flows for a tier\n3. `get_technique_examples(technique_name, n=5)` - Finds examples of specific techniques in action\n4. `compare_responses(objection_type, successful=True)` - Gets successful vs failed response comparisons\n\nLeverage existing `data_loader.py` for `ConversationThread` and `ParsedScreenshot` classes. Use the `objection_analysis.py` patterns for matching. Return structured `ConversationExample` dataclass objects with:\n- `messages: List[Message]` - Full conversation\n- `highlight_start/end: int` - Key technique indices\n- `outcome: Outcome` - Sale/tip result\n- `tier, chatter, technique, analysis: str` - Metadata\n\nPseudo-code:\n```python\nclass ConversationExampleExtractor:\n    def __init__(self, threads: List[ConversationThread]):\n        self.threads = threads\n        self.objections = self._index_objections()\n    \n    def get_objection_with_context(self, objection_type: str, context_messages: int = 5) -> List[ConversationExample]:\n        # Find objections of type, get surrounding messages\n        # Return with before/after context and outcome\n```",
+        "testStrategy": "Unit tests verifying: (1) Context extraction returns correct number of messages before/after, (2) Sale outcomes are correctly linked to objections, (3) Tier filtering works correctly, (4) Edge cases handled (objection at start/end of conversation). Integration test with sample parsed data to verify real extraction.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 51,
+        "title": "Build Evidence Database Schema and Generator",
+        "description": "Create the structured JSON evidence database that stores all extracted examples in a searchable, structured format for playbook generation.",
+        "details": "Create `scripts/analysis/evidence_database.py` that builds and maintains the evidence JSON structure:\n\n```python\n@dataclass\nclass EvidenceDatabase:\n    objection_examples: Dict[str, ObjectionEvidence]  # by objection type\n    tier_examples: Dict[str, TierEvidence]  # by tier\n    technique_examples: Dict[str, List[TechniqueEvidence]]\n    chatter_examples: Dict[str, ChatterEvidence]\n\n@dataclass\nclass ObjectionEvidence:\n    successful: List[ConversationExample]\n    failed: List[ConversationExample]\n    statistics: ObjectionStats  # from existing objection_analysis.py\n```\n\nOutput format (saved to `data/insights/evidence_database.json`):\n```json\n{\n  \"objection_examples\": {\n    \"price\": {\n      \"successful\": [{context, objection, response, outcome, chatter, tier, analysis}],\n      \"failed\": [...],\n      \"statistics\": {n, success_rate, avg_sale, by_tier}\n    }\n  },\n  \"tier_examples\": {...},\n  \"technique_examples\": {...}\n}\n```\n\nIntegrate with `example_extractor.py` to populate the database. Add CLI entry point for regeneration.",
+        "testStrategy": "Validate JSON schema compliance, verify all required fields populated, test serialization/deserialization round-trip, check statistics match existing `objection_analysis.py` output, ensure no duplicate examples.",
+        "priority": "high",
+        "dependencies": [
+          50
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 52,
+        "title": "Enhance Objection Playbook with Full Conversation Context",
+        "description": "Upgrade the existing objection playbook to include 5-10 message context before/after each objection, multiple examples per type, and side-by-side success/failure comparisons.",
+        "details": "Modify `scripts/analysis/objection_analysis.py` and create `scripts/analysis/enhanced_playbook_generator.py`:\n\n1. For each of 5 objection types (price, timing, trust, need, commitment):\n   - Include 3-5 successful examples with FULL conversation context (5-10 messages before and after)\n   - Include 2-3 failed examples for contrast\n   - Add tier-specific variations with examples\n   - Pattern analysis: what successful responses have in common\n\n2. Enhanced section format:\n```markdown\n## Handling \"I can't afford it\"\n\n**Success Rate:** 45.8% (n=277 instances)\n**Best Tier:** LOW (52.8%)\n\n### The Technique: Ask Their Budget\n\n**Example (Mikko, $2000 sale):**\n> [CONTEXT - 5 messages before]\n> SUB: ...\n> CREATOR: ...\n> [OBJECTION]\n> SUB: that's expensive...\n> [RESPONSE]\n> CREATOR: how much can u babe?\n> [OUTCOME - messages after]\n> SUB: ok 2000 works\n> [SALE: $2000]\n\n**Why it works:** [Psychology/pattern analysis]\n\n**Counter-example (failed):**\n> [Similar format showing what NOT to do]\n```\n\nOutput to `data/insights/playbooks/enhanced_objection_playbook.md`",
+        "testStrategy": "Verify each objection type has minimum 3 success examples and 2 failure examples. Confirm all statistics include sample sizes. Validate markdown formatting renders correctly. Check that context messages are actually from the same conversation thread.",
+        "priority": "high",
+        "dependencies": [
+          50,
+          51
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 53,
+        "title": "Create Tier-Specific Playbooks with Sale Flow Examples",
+        "description": "Enhance the existing tier playbooks (NEW/LOW/MEDIUM/HIGH/WHALE) with real conversation examples showing successful opener-to-sale flows, price points that worked, and tier-specific language patterns.",
+        "details": "For each tier playbook in `data/insights/playbooks/`:\n\n1. Add 3-5 full sale conversation examples:\n   - Complete opener → engagement → sale flow\n   - Include actual price points with evidence\n   - Show the full message sequence\n\n2. Price point evidence section:\n```markdown\n### Price Points That Work\n\n| Price Range | Success Rate | n | Example Sale |\n|-------------|--------------|---|-------------|\n| $5-20 | 68% | 45 | Weluu: \"$15 for this special preview...\" |\n| $21-50 | 52% | 32 | ... |\n```\n\n3. Language pattern analysis:\n   - Common openers that led to sales\n   - Phrases that worked vs didn't work\n   - Tier-specific vocabulary\n\n4. Flow examples:\n```markdown\n### Successful Sale Flow: LOW Tier ($94 avg)\n\n**Arvin with $200 subscriber:**\n> [OPENER]\n> CREATOR: Hey baby, how are you today? 😘\n> [ENGAGEMENT - 5 messages]\n> ...\n> [TRANSITION]\n> CREATOR: I made something special...\n> [CLOSE]\n> CREATOR: It's $50 for you babe\n> [SALE: $50]\n```\n\nCreate `scripts/analysis/tier_playbook_generator.py` using data from evidence database.",
+        "testStrategy": "Each tier playbook has at least 3 complete sale flow examples. Price point tables have sample sizes. All examples are real (verifiable from parsed data). Language patterns are extracted from actual messages, not fabricated.",
+        "priority": "high",
+        "dependencies": [
+          50,
+          51
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 54,
+        "title": "Build Chatter Style Deep-Dive Module",
+        "description": "Create deep-dive profiles for top 3 performers (Arvin, Leonel, Billy) showing their actual conversation techniques, side-by-side style comparisons, and what makes them effective with real examples.",
+        "details": "Create `scripts/analysis/chatter_deepdive.py` building on `chatter_analysis.py`:\n\n1. For each top performer (Arvin, Leonel, Billy):\n   - 5+ conversation examples demonstrating their style\n   - Technique breakdown with evidence\n   - What makes their approach effective\n\n2. Profile structure:\n```markdown\n## Arvin: The Playful Closer\n\n**Stats:** $42,867 total sales | 200 threads | $214/thread | 54% playful approach\n\n### Signature Techniques\n\n**1. Budget Inquiry (used 45 times, 62% success)**\n> Example: \"how much can u babe?\"\n> Context: [full conversation showing technique in action]\n> Why it works: Shifts from rejection to negotiation\n\n**2. Patience with Payday Objections**\n> Example: [conversation showing technique]\n```\n\n3. Side-by-side comparison table:\n```markdown\n### Style Comparison\n\n| Aspect | Arvin | Leonel | Billy |\n|--------|-------|--------|-------|\n| Primary Approach | Playful (54%) | Teasing (48%) | Romantic (41%) |\n| Avg Message Length | 73 chars | 95 chars | 68 chars |\n| Talk:Listen Ratio | 1.24 | 0.98 | 1.15 |\n| Best Tier | HIGH | MEDIUM | WHALE |\n```\n\nOutput to `data/insights/chatter_deepdives/` directory.",
+        "testStrategy": "Verify all 3 chatters have at least 5 conversation examples each. Statistics match existing `chatter_profiles.json`. Techniques are actually observed in their conversations. Comparison metrics are calculated from real data.",
+        "priority": "medium",
+        "dependencies": [
+          50,
+          51
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 55,
+        "title": "Integrate Psychological Research Citations",
+        "description": "Add research-backed citations to playbooks explaining why techniques work, referencing Cialdini's principles, SPIN selling, and text-based persuasion research.",
+        "details": "Create `scripts/analysis/psychology_citations.py` with a citation database:\n\n```python\nCITATIONS = {\n    \"reciprocity\": {\n        \"principle\": \"Cialdini's Reciprocity Principle\",\n        \"explanation\": \"People feel obligated to return favors\",\n        \"application\": \"Give value (preview, attention) before asking\",\n        \"source\": \"Cialdini, R. (2006). Influence: The Psychology of Persuasion\"\n    },\n    \"commitment_consistency\": {\n        \"principle\": \"Commitment & Consistency\",\n        \"explanation\": \"Once people state a position, they tend to follow through\",\n        \"application\": \"Ask 'how much can you do?' - once they state a number, they're committed\"\n    },\n    # ... scarcity, social_proof, authority, liking\n}\n```\n\nIntegrate into playbook generator:\n```markdown\n**Why it works:** Based on Cialdini's commitment principle - once they state a number, they're more likely to follow through. (Cialdini, 2006)\n```\n\nAdd SPIN selling methodology references:\n- Situation questions → Problem questions → Implication → Need-payoff\n\nAdd objection handling frameworks:\n- Feel-Felt-Found\n- Acknowledge-Bridge-Close",
+        "testStrategy": "All cited research is accurate and properly attributed. Principles are correctly matched to observed techniques. Citations enhance understanding without being overwhelming. At least 5 different psychological principles cited across playbooks.",
+        "priority": "medium",
+        "dependencies": [
+          52,
+          53
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 56,
+        "title": "Create PlaybookSection Data Structure and Generator",
+        "description": "Build the structured PlaybookSection dataclass and generator that combines claims, statistics, examples, counter-examples, and psychology into formatted playbook sections.",
+        "details": "Create `scripts/analysis/playbook_generator.py` with structured generation:\n\n```python\n@dataclass\nclass PlaybookSection:\n    title: str\n    claim: str  # What we're recommending\n    statistics: Dict  # n, success_rate, avg_sale\n    examples: List[ConversationExample]  # Real successful examples\n    counter_examples: List[ConversationExample]  # Real failed attempts\n    psychology: str  # Research backing\n    templates: List[str]  # Suggested response templates\n\nclass PlaybookGenerator:\n    def generate_section(self, section_data: PlaybookSection) -> str:\n        \"\"\"Generate markdown section with all components.\"\"\"\n        return f\"\"\"\n## {section_data.title}\n\n**Claim:** {section_data.claim}\n**Data:** Success Rate: {stats['success_rate']}% (n={stats['n']}), Avg Sale: ${stats['avg_sale']}\n\n### Examples\n{self._format_examples(section_data.examples)}\n\n### What NOT to Do\n{self._format_counter_examples(section_data.counter_examples)}\n\n### Why It Works\n{section_data.psychology}\n\n### Response Templates\n{self._format_templates(section_data.templates)}\n\"\"\"\n```\n\nEnsure consistent formatting across all playbook outputs.",
+        "testStrategy": "Generated sections follow consistent structure. All required fields present. Markdown renders correctly. Statistics formatted with appropriate precision. Examples properly escaped for markdown.",
+        "priority": "medium",
+        "dependencies": [
+          50,
+          51,
+          55
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 57,
+        "title": "Implement Validation and Deduplication Pipeline",
+        "description": "Create validation system to ensure all examples are real (from parsed data), statistics have sample sizes, examples aren't cherry-picked, and no duplicates exist.",
+        "details": "Create `scripts/analysis/validation.py`:\n\n```python\nclass EvidenceValidator:\n    def __init__(self, threads: List[ConversationThread], evidence_db: EvidenceDatabase):\n        self.threads = threads\n        self.evidence_db = evidence_db\n    \n    def validate_example_exists(self, example: ConversationExample) -> bool:\n        \"\"\"Verify example comes from actual parsed data.\"\"\"\n        # Match thread_id and message content\n        \n    def check_sample_sizes(self) -> List[Warning]:\n        \"\"\"Ensure all statistics have adequate sample sizes.\"\"\"\n        # Flag any n < 10 as potentially unreliable\n        \n    def detect_duplicates(self) -> List[Duplicate]:\n        \"\"\"Find duplicate examples across sections.\"\"\"\n        \n    def ensure_diversity(self) -> Dict[str, int]:\n        \"\"\"Check examples come from multiple chatters, not cherry-picked.\"\"\"\n        # Return distribution of chatters per technique\n        \n    def validate_all(self) -> ValidationReport:\n        \"\"\"Run all validations, return report.\"\"\"\n```\n\nIntegrate into playbook generation pipeline - fail if validation fails.",
+        "testStrategy": "Validation catches intentionally inserted fake examples. Duplicate detection works across playbook sections. Sample size warnings are accurate. Diversity check correctly identifies over-represented chatters.",
+        "priority": "medium",
+        "dependencies": [
+          51
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 58,
+        "title": "Create CLI Entry Points and Run Full Pipeline",
+        "description": "Build CLI commands to run the full evidence extraction and playbook generation pipeline, with options for regeneration and validation.",
+        "details": "Update `scripts/analysis/run_full_analysis.py` or create `scripts/generate_enhanced_playbooks.py`:\n\n```python\n@click.command()\n@click.option('--input-dir', default='data/parsed_conversations')\n@click.option('--output-dir', default='data/insights')\n@click.option('--validate/--no-validate', default=True)\n@click.option('--min-examples', default=3, help='Minimum examples per technique')\n@click.option('--context-messages', default=5, help='Messages before/after to include')\ndef generate_playbooks(input_dir, output_dir, validate, min_examples, context_messages):\n    \"\"\"Generate all enhanced playbooks from parsed conversation data.\"\"\"\n    # 1. Load data using data_loader\n    # 2. Build evidence database\n    # 3. Validate evidence\n    # 4. Generate enhanced objection playbook\n    # 5. Generate tier playbooks\n    # 6. Generate chatter deep-dives\n    # 7. Output summary statistics\n```\n\nAdd to existing analysis pipeline so it runs automatically.\n\nOutput:\n- `data/insights/evidence_database.json`\n- `data/insights/playbooks/enhanced_objection_playbook.md`\n- `data/insights/playbooks/*_subscriber_playbook.md` (enhanced)\n- `data/insights/chatter_deepdives/*.md`",
+        "testStrategy": "CLI runs without errors on full dataset. All expected output files generated. Validation runs and passes. Regeneration produces consistent results. Progress output is informative.",
+        "priority": "medium",
+        "dependencies": [
+          52,
+          53,
+          54,
+          57
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 59,
+        "title": "Add Pattern Analysis for Successful Responses",
+        "description": "Implement analysis to identify what successful responses have in common - linguistic patterns, length, timing, approach - to provide actionable insights beyond just examples.",
+        "details": "Create `scripts/analysis/pattern_analysis.py`:\n\n```python\nclass ResponsePatternAnalyzer:\n    def analyze_successful_patterns(self, examples: List[ConversationExample]) -> PatternReport:\n        \"\"\"Identify common patterns in successful responses.\"\"\"\n        patterns = {\n            'avg_response_length': self._avg_length([e.response for e in examples]),\n            'common_phrases': self._extract_phrases([e.response for e in examples]),\n            'question_rate': self._count_questions([e.response for e in examples]),\n            'emoji_usage': self._analyze_emojis([e.response for e in examples]),\n            'response_timing': self._avg_messages_to_response(examples),\n            'tone_distribution': self._classify_tones([e.response for e in examples])\n        }\n        return PatternReport(**patterns)\n    \n    def compare_success_vs_failure(self, success: List, failure: List) -> ComparisonReport:\n        \"\"\"What's different between successful and failed responses?\"\"\"\n```\n\nOutput pattern insights in playbooks:\n```markdown\n### Pattern Analysis: What Works\n\n- **Length:** Successful responses average 45 chars (vs 78 for failed)\n- **Questions:** 67% of successful responses ask a question\n- **Common phrases:** \"how much can u\", \"what about\", \"for you babe\"\n- **Tone:** 72% playful, 18% direct, 10% romantic\n```",
+        "testStrategy": "Pattern extraction produces meaningful insights. Comparisons between success/failure are statistically valid. Common phrases are actually common (appear in >10% of examples). Metrics are calculated correctly.",
+        "priority": "low",
+        "dependencies": [
+          50,
+          51
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 60,
+        "title": "Generate Training-Ready Output Format",
+        "description": "Ensure playbooks are formatted as long-form training materials that a new chatter could learn from standalone, not just outlines with bullets.",
+        "details": "Create training material formatting guidelines and templates:\n\n1. Each playbook section should be self-contained and educational\n2. Include \"How to Use This Section\" guides\n3. Add practice scenarios for each technique\n4. Include \"Quick Reference\" cards for common situations\n\nFormat enhancements:\n```markdown\n# Objection Handling Training Guide\n\n## How to Use This Guide\nThis guide teaches you to handle the 5 most common subscriber objections...\n\n## Quick Reference Card\n| If they say... | Try this... | Why it works |\n|----------------|-------------|-------------|\n| \"Too expensive\" | \"How much can you do?\" | Shifts to negotiation |\n\n## Deep Dive: Price Objections\n\n### The Situation\nA subscriber says they can't afford your content...\n\n### The Technique\n[Detailed explanation with multiple examples]\n\n### Practice Scenario\nImagine a LOW tier subscriber just said \"that's a lot\"...\n[Walk through ideal response]\n\n### Self-Check Questions\n1. What should you NEVER do when facing a price objection?\n2. Which tier responds best to budget questions?\n```\n\nOutput to `data/insights/training/` directory.",
+        "testStrategy": "Playbooks can be understood by someone with no prior context. Quick reference cards cover all major scenarios. Practice scenarios are realistic. Self-check questions have clear answers derivable from the content. Word count indicates substantive training material (>3000 words per major playbook).",
+        "priority": "low",
+        "dependencies": [
+          52,
+          53,
+          54,
+          56
+        ],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
-      "version": "1.0.0",
-      "lastModified": "2025-12-22T08:13:12.619Z",
-      "taskCount": 34,
-      "completedCount": 23,
-      "tags": [
-        "master"
-      ]
+      "created": "2025-12-22T09:10:08.864Z",
+      "updated": "2025-12-22T09:10:08.864Z",
+      "description": "Tasks for master context"
     }
   }
 }
