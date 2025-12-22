@@ -320,13 +320,194 @@
         "status": "done",
         "subtasks": [],
         "updatedAt": "2025-12-22T07:00:09.601Z"
+      },
+      {
+        "id": "36",
+        "title": "Create tip data validation and flagging script",
+        "description": "Implement a validation script to detect and flag unreliable tip data. The current bug causes outcome.tip_amount to contain lifetime tips from the subscriber panel instead of per-screenshot tips. Create a script that identifies conversations where tip_amount equals subscriber_stats.tips and marks tip data as unreliable.",
+        "details": "Create `scripts/analysis/tip_data_validator.py`:\n\n```python\nfrom dataclasses import dataclass\nfrom typing import List, Dict\nfrom scripts.analysis.data_loader import ConversationThread, load_and_prepare_data\n\n@dataclass\nclass TipValidationResult:\n    thread_id: str\n    tip_amount: float\n    lifetime_tips: float\n    is_reliable: bool\n    flag_reason: str\n\ndef validate_tip_data(threads: List[ConversationThread]) -> Dict:\n    results = []\n    for thread in threads:\n        for ss in thread.screenshots:\n            if ss.outcome and ss.outcome.tip_amount:\n                sub_stats = ss.subscriber_stats\n                lifetime_tips = sub_stats.tips if sub_stats else None\n                # Flag if tip_amount equals lifetime tips (parsing bug)\n                is_reliable = tip_amount != lifetime_tips if lifetime_tips else True\n                results.append(TipValidationResult(...))\n    \n    return {\n        'total_checked': len(results),\n        'reliable': sum(1 for r in results if r.is_reliable),\n        'flagged': [r for r in results if not r.is_reliable],\n        'recommendation': 'Mark all tip data as unreliable in reports'\n    }\n```\n\nAdd a `tip_data_reliable: bool = False` field to analysis outputs. Update statistical_analysis.py to exclude tip-based metrics or clearly label them as unreliable.",
+        "testStrategy": "1. Run validator on full dataset, verify it correctly identifies conversations where tip_amount == subscriber_stats.tips\n2. Unit test with mock data containing known parsing errors\n3. Verify output reports include unreliable tip data warnings\n4. Compare flagged count against known dataset statistics",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "37",
+        "title": "Implement approach classification refinement",
+        "description": "Refine the existing approach classification system with clearer criteria. Define distinct categories: playful (light humor, non-sexual fun), teasing (flirty, suggestive, building desire), transactional (direct business), romantic (GFE emotional connection), and direct (blunt, minimal buildup). Create validation samples to test classification accuracy.",
+        "details": "Modify `scripts/conversation_parser.py` to use improved classification criteria:\n\n```python\nAPPROACH_CRITERIA = {\n    'playful': {\n        'indicators': ['haha', 'lol', 'joke', 'funny', 'silly', 'game'],\n        'excludes': ['sexy', 'naughty', 'tease', 'want you'],\n        'description': 'Light humor, jokes, casual banter, non-sexual fun'\n    },\n    'teasing': {\n        'indicators': ['tease', 'waiting', 'imagine', 'wish you could', 'naughty'],\n        'description': 'Flirty, suggestive, withholding content to build desire'\n    },\n    'transactional': {\n        'indicators': ['$', 'price', 'PPV', 'unlock', 'purchase', 'buy'],\n        'description': 'Direct business talk, clear pricing'\n    },\n    'romantic': {\n        'indicators': ['miss you', 'thinking of you', 'babe', 'love', 'special to me'],\n        'description': 'GFE emotional connection, relationship simulation'\n    },\n    'direct': {\n        'indicators': ['here is', 'sent you', 'check this'],\n        'excludes': ['playful', 'teasing', 'romantic'],\n        'description': 'Blunt, minimal buildup, straight to the offer'\n    }\n}\n```\n\nCreate `scripts/analysis/approach_validator.py` to sample and validate classification accuracy against manual review.",
+        "testStrategy": "1. Create a gold-standard validation set of 100 manually classified conversations\n2. Run classifier against validation set, measure precision/recall per category\n3. Target: 80%+ agreement with manual classification\n4. Compare old vs new classification distributions across full dataset",
+        "priority": "high",
+        "dependencies": [
+          "36"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "38",
+        "title": "Build objection pattern extraction system",
+        "description": "Create a comprehensive objection detection system that identifies subscriber messages containing objection indicators. Extract price objections, timing objections, trust objections, need objections, and commitment objections from conversation data.",
+        "details": "Create `scripts/analysis/objection_analysis.py`:\n\n```python\nfrom dataclasses import dataclass\nfrom typing import List, Optional\nfrom enum import Enum\n\nclass ObjectionType(str, Enum):\n    PRICE = 'price'\n    TIMING = 'timing'\n    TRUST = 'trust'\n    NEED = 'need'\n    COMMITMENT = 'commitment'\n\nOBJECTION_PATTERNS = {\n    ObjectionType.PRICE: [\n        r'too expensive', r\"can't afford\", r'too much', r\"that's a lot\",\n        r'broke', r'no money', r'budget', r'cheaper', r'discount'\n    ],\n    ObjectionType.TIMING: [\n        r'maybe later', r'not now', r'next time', r'after payday',\n        r'when i get paid', r'tomorrow', r'next week'\n    ],\n    ObjectionType.TRUST: [\n        r'is it worth', r'how do i know', r'what if', r'scam',\n        r'not sure if', r'trust'\n    ],\n    ObjectionType.NEED: [\n        r\"don't need\", r'already have', r'not interested',\n        r'not for me', r'not my thing'\n    ],\n    ObjectionType.COMMITMENT: [\n        r\"i'll think about\", r'let me see', r'not sure',\n        r'maybe', r'idk', r\"i don't know\"\n    ]\n}\n\n@dataclass\nclass ObjectionInstance:\n    objection_text: str\n    objection_type: ObjectionType\n    message_index: int  # Position in conversation\n    subscriber_tier: str\n    thread_id: str\n    chatter: str\n\ndef extract_objections(threads: List[ConversationThread]) -> List[ObjectionInstance]:\n    # Iterate all subscriber messages\n    # Match against patterns\n    # Return structured objection instances\n```",
+        "testStrategy": "1. Run extraction on full dataset, verify coverage of common objection phrases\n2. Manual review of 50 random extracted objections for accuracy\n3. Verify each objection type has minimum 30 instances (per PRD requirement)\n4. Check extraction correctly identifies message position in thread",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T08:13:01.509Z"
+      },
+      {
+        "id": "39",
+        "title": "Implement response effectiveness tracking",
+        "description": "For each objection found, capture the creator's response(s) following the objection and track whether a sale occurred within the next 5 messages. Calculate success rate per response pattern and identify which chatters handle which objections best.",
+        "details": "Extend `scripts/analysis/objection_analysis.py`:\n\n```python\n@dataclass\nclass ObjectionResponse:\n    objection: ObjectionInstance\n    response_text: str\n    response_chatter: str\n    resulted_in_sale: bool\n    messages_to_sale: Optional[int]  # None if no sale\n    sale_amount: Optional[float]\n\ndef track_objection_responses(threads: List[ConversationThread]) -> List[ObjectionResponse]:\n    responses = []\n    for thread in threads:\n        objections = extract_objections_from_thread(thread)\n        for obj in objections:\n            # Get next creator message(s) after objection\n            response = get_creator_response(thread, obj.message_index)\n            # Check next 5 messages for sale\n            sale_within_5 = check_sale_in_window(thread, obj.message_index, window=5)\n            responses.append(ObjectionResponse(\n                objection=obj,\n                response_text=response,\n                response_chatter=thread.chatter,\n                resulted_in_sale=sale_within_5.occurred,\n                messages_to_sale=sale_within_5.distance,\n                sale_amount=sale_within_5.amount\n            ))\n    return responses\n\ndef calculate_response_effectiveness(responses: List[ObjectionResponse]) -> Dict:\n    # Group by objection_type + response pattern\n    # Calculate success rate per pattern\n    # Identify top performers per objection type\n```",
+        "testStrategy": "1. Verify 5-message window correctly identifies sales\n2. Test with known conversion scenarios from example conversations\n3. Validate chatter attribution is correct\n4. Check success rate calculations sum correctly (total sales / total objections)",
+        "priority": "high",
+        "dependencies": [
+          "38"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T08:13:07.244Z"
+      },
+      {
+        "id": "40",
+        "title": "Generate objection handling playbook",
+        "description": "Create structured playbook output showing best responses for each objection type, with success rates, examples from top performers (Arvin, Leonel), and tier-specific notes. Output in both Markdown and JSON formats.",
+        "details": "Create `scripts/analysis/playbook_generator.py`:\n\n```python\n@dataclass\nclass PlaybookEntry:\n    objection_pattern: str\n    objection_type: ObjectionType\n    best_response: str\n    best_response_success_rate: float\n    best_response_chatter: str\n    alternative_responses: List[Tuple[str, float, str]]  # (text, rate, chatter)\n    what_not_to_do: str\n    what_not_to_do_rate: float\n    tier_notes: Dict[str, str]  # tier -> specific advice\n\ndef generate_playbook(responses: List[ObjectionResponse]) -> List[PlaybookEntry]:\n    # Group responses by objection type\n    # Find highest success rate responses\n    # Find lowest success rate (what not to do)\n    # Extract tier-specific patterns\n    \ndef format_playbook_markdown(entries: List[PlaybookEntry]) -> str:\n    # Format as per PRD example:\n    # Objection: \"I can't afford it\"\n    # - Best Response (73% success): [example from Arvin]\n    # - Alternative (61% success): [example from Leonel]\n    # - What NOT to do (12% success): [pattern]\n    # - Tier-specific notes\n\ndef format_playbook_json(entries: List[PlaybookEntry]) -> Dict:\n    # Structured JSON for API consumption\n```\n\nOutput to `data/insights/objection_playbook.md` and `data/insights/raw/objection_playbook.json`",
+        "testStrategy": "1. Verify playbook covers 80%+ of observed objections (PRD requirement)\n2. Check success rates are mathematically correct\n3. Validate examples actually come from named chatters\n4. Review tier-specific notes for each objection type",
+        "priority": "high",
+        "dependencies": [
+          "39"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T08:13:12.618Z"
+      },
+      {
+        "id": "41",
+        "title": "Implement opener effectiveness analysis",
+        "description": "Extract and categorize first creator messages from each conversation thread. Categorize opener types (question, compliment, teaser, direct, re-engagement) and calculate opener type to sale conversion rate by subscriber tier.",
+        "details": "Create `scripts/analysis/conversation_flow.py`:\n\n```python\nfrom enum import Enum\nfrom dataclasses import dataclass\n\nclass OpenerType(str, Enum):\n    QUESTION = 'question'  # \"How's your day?\"\n    COMPLIMENT = 'compliment'  # \"I was thinking about you\"\n    TEASER = 'teaser'  # \"I have something special...\"\n    DIRECT = 'direct'  # \"Want to see something?\"\n    REENGAGEMENT = 'reengagement'  # \"Haven't heard from you...\"\n\nOPENER_PATTERNS = {\n    OpenerType.QUESTION: [r'\\?$', r'how (are|r) (you|u)', r'what.*doing'],\n    OpenerType.COMPLIMENT: [r'thinking (of|about) you', r'miss you', r'beautiful'],\n    OpenerType.TEASER: [r'something special', r'surprise', r'secret', r'guess what'],\n    OpenerType.DIRECT: [r'want to see', r'check this', r'sent you'],\n    OpenerType.REENGAGEMENT: [r\"haven't heard\", r'where.*been', r'been a while']\n}\n\n@dataclass\nclass OpenerAnalysis:\n    opener_text: str\n    opener_type: OpenerType\n    subscriber_tier: str\n    resulted_in_sale: bool\n    sale_amount: Optional[float]\n    thread_id: str\n\ndef analyze_openers(threads: List[ConversationThread]) -> Dict:\n    # Extract first creator message per thread\n    # Classify opener type\n    # Track sale outcomes\n    # Return {tier: {opener_type: {count, conversion_rate, avg_sale}}}\n```",
+        "testStrategy": "1. Verify opener extraction gets actual first creator message\n2. Test classifier accuracy against manual sample\n3. Calculate conversion rates by tier and opener type\n4. Verify statistical significance (n>30 per category)",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "42",
+        "title": "Build closing phrase analysis system",
+        "description": "Find the last creator message before 'unlocked' or sale confirmation. Extract common closing patterns (scarcity, urgency, value, soft closes) and calculate effectiveness by tier and approach.",
+        "details": "Extend `scripts/analysis/conversation_flow.py`:\n\n```python\nclass CloseType(str, Enum):\n    SCARCITY = 'scarcity'  # \"Only sending this to you\"\n    URGENCY = 'urgency'  # \"Just filmed this\"\n    VALUE = 'value'  # \"You're going to love this\"\n    SOFT = 'soft'  # \"Let me know if you want it\"\n\nCLOSE_PATTERNS = {\n    CloseType.SCARCITY: [r'only (for|to) you', r'exclusive', r'special for'],\n    CloseType.URGENCY: [r'just (filmed|made|took)', r'fresh', r'right now'],\n    CloseType.VALUE: [r\"you.*love\", r'worth it', r'amazing'],\n    CloseType.SOFT: [r'let me know', r'if you want', r'whenever you.*ready']\n}\n\n@dataclass\nclass ClosingAnalysis:\n    closing_text: str\n    close_type: CloseType\n    creator_approach: str  # From context\n    subscriber_tier: str\n    resulted_in_sale: bool\n    sale_amount: Optional[float]\n\ndef analyze_closings(threads: List[ConversationThread]) -> Dict:\n    # Find message before sale/unlock\n    # Classify closing type\n    # Cross-reference with approach\n    # Return effectiveness metrics\n```\n\nOutput closing templates by effectiveness to `data/insights/closing_phrases.json`",
+        "testStrategy": "1. Verify 'message before sale' detection is accurate\n2. Test close type classification against manual review\n3. Calculate effectiveness rates by tier\n4. Validate approach cross-referencing",
+        "priority": "medium",
+        "dependencies": [
+          "41"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "43",
+        "title": "Implement conversation length optimization analysis",
+        "description": "Analyze messages to first sale by tier and chatter. Calculate optimal conversation length before pitching and identify the point of diminishing returns (comparing Arvin's 22.5 msgs/thread vs Billy's 93.4 msgs/thread).",
+        "details": "Extend `scripts/analysis/conversation_flow.py`:\n\n```python\n@dataclass\nclass ConversationFlowMetrics:\n    messages_to_first_sale: List[int]  # Distribution\n    avg_messages_to_sale: float\n    median_messages_to_sale: float\n    optimal_pitch_point: int  # Message number with best conversion\n    diminishing_returns_point: int  # Where more chat hurts conversion\n\ndef analyze_conversation_length(threads: List[ConversationThread]) -> Dict:\n    # Track message count at time of first sale\n    # Group by tier, chatter\n    # Find optimal pitch timing\n    # Calculate diminishing returns\n    \n    return {\n        'by_tier': {\n            'new': {'avg_to_sale': X, 'optimal_pitch': Y, 'diminishing_at': Z},\n            ...\n        },\n        'by_chatter': {\n            'Arvin': {'avg_msgs_per_thread': 22.5, 'conversion_rate': ...},\n            'Billy': {'avg_msgs_per_thread': 93.4, 'conversion_rate': ...}\n        },\n        'insights': [\n            'Shorter conversations correlate with higher conversion for NEW tier',\n            'WHALE tier benefits from longer relationship building'\n        ]\n    }\n```",
+        "testStrategy": "1. Verify message counting is accurate (exclude empty messages)\n2. Compare calculated chatter averages against existing analysis\n3. Validate optimal pitch point has statistical significance\n4. Test diminishing returns calculation logic",
+        "priority": "medium",
+        "dependencies": [
+          "41"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "44",
+        "title": "Create price point optimization analysis",
+        "description": "Analyze PPV price distribution, price vs conversion rate curves, and optimal price points by tier. Identify gateway prices for NEW tier, comfortable spend limits for LOW tier, sweet spots for MEDIUM, and premium pricing for HIGH/WHALE.",
+        "details": "Create `scripts/analysis/pricing_analysis.py`:\n\n```python\n@dataclass \nclass PricePointAnalysis:\n    price: float\n    frequency: int  # How often this price appears\n    conversion_rate: float\n    tier_breakdown: Dict[str, int]  # tier -> count\n\ndef analyze_price_distribution(threads: List[ConversationThread]) -> Dict:\n    # Extract all PPV prices from outcome.ppv_price\n    # Count frequency per price point\n    # Calculate conversion (sales/offers) per price\n    \ndef find_optimal_prices_by_tier(threads: List[ConversationThread]) -> Dict:\n    return {\n        'new': {\n            'gateway_price': 10,  # Entry price that converts best\n            'max_comfortable': 25,\n            'conversion_curve': [(5, 0.8), (10, 0.7), (25, 0.4), ...]\n        },\n        'low': {...},\n        'medium': {\n            'sweet_spot_range': (25, 50),\n            'max_comfortable': 100\n        },\n        'high': {...},\n        'whale': {\n            'premium_prices': [100, 200, 500],\n            'no_ceiling_detected': True\n        }\n    }\n\ndef analyze_discount_effectiveness(threads: List[ConversationThread]) -> Dict:\n    # Find negotiations/discounts in conversation\n    # Track: \"I'll do it for $X\" patterns\n    # Compare discount vs no-discount conversion\n```",
+        "testStrategy": "1. Verify price extraction captures all PPV prices\n2. Validate conversion rate calculations\n3. Check tier segmentation is accurate\n4. Test discount detection patterns",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "45",
+        "title": "Build high-conversion phrase mining system",
+        "description": "Extract creator phrases that appear within 3 messages before sales. Perform frequency analysis with success correlation and build a 'power phrases' dictionary including urgency words, exclusivity language, and desire triggers.",
+        "details": "Create `scripts/analysis/phrase_extraction.py`:\n\n```python\nfrom collections import Counter\nfrom typing import List, Tuple\n\n@dataclass\nclass PowerPhrase:\n    phrase: str\n    frequency: int\n    sales_correlation: float  # % of times it appears before a sale\n    category: str  # urgency, exclusivity, desire, etc.\n    example_context: str\n\ndef extract_presale_phrases(threads: List[ConversationThread], window: int = 3) -> List[PowerPhrase]:\n    # For each sale, extract 3 previous creator messages\n    # Extract n-grams (1-4 words)\n    # Count frequency\n    # Calculate correlation with sales\n    \ndef categorize_phrases(phrases: List[PowerPhrase]) -> Dict[str, List[PowerPhrase]]:\n    categories = {\n        'urgency': [r'just', r'right now', r'hurry', r'quick'],\n        'exclusivity': [r'only for you', r'special', r'exclusive', r'private'],\n        'desire': [r'want', r'imagine', r'fantasize', r'dream'],\n        'value': [r'worth', r'love', r'amazing', r'incredible'],\n        'intimacy': [r'just us', r'between us', r'our secret']\n    }\n    # Classify phrases into categories\n    \ndef build_power_phrases_dictionary(threads: List[ConversationThread]) -> Dict:\n    # Output: data/insights/raw/power_phrases.json\n    return {\n        'phrases': [...],\n        'by_category': {...},\n        'by_tier': {...},\n        'top_20': [...]\n    }\n```",
+        "testStrategy": "1. Verify 3-message window captures correct messages before sale\n2. Test phrase extraction for common known successful phrases\n3. Validate correlation calculations\n4. Check category classification accuracy",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "46",
+        "title": "Implement subscriber qualification keyword detection",
+        "description": "Build qualification keyword lists identifying subscriber words that indicate buying intent ('I want', 'show me', 'how much') vs words indicating they won't buy ('just looking', 'maybe', 'idk'). Create buyer readiness scoring.",
+        "details": "Extend `scripts/analysis/phrase_extraction.py`:\n\n```python\nBUYING_INTENT_INDICATORS = [\n    r'\\bi want\\b', r'show me', r'how much', r'send (it|me)',\n    r'\\byes\\b', r\"i'll (take|buy|get)\", r'unlock', r'give me',\n    r'ready', r'now', r'please'\n]\n\nNON_BUYER_INDICATORS = [\n    r'just looking', r'maybe', r'idk', r\"don't know\",\n    r'not sure', r'later', r'think about', r\"can't\",\n    r'too (much|expensive)', r'broke'\n]\n\n@dataclass\nclass SubscriberReadinessScore:\n    message_text: str\n    buying_signals: List[str]\n    non_buying_signals: List[str]\n    score: float  # -1 to 1 (negative = won't buy, positive = will buy)\n\ndef score_subscriber_readiness(messages: List[Message]) -> List[SubscriberReadinessScore]:\n    # Analyze each subscriber message\n    # Count buying vs non-buying indicators\n    # Return scored messages\n\ndef generate_qualification_guide(threads: List[ConversationThread]) -> Dict:\n    # Validate indicators against actual outcomes\n    # Output which keywords actually predict sales\n    return {\n        'high_intent_keywords': [...],  # Actually led to sales\n        'low_intent_keywords': [...],  # Actually led to no sale\n        'false_positives': [...],  # Seemed positive but didn't convert\n        'recommendation': 'Focus chat effort on subscribers showing X, Y, Z keywords'\n    }\n```",
+        "testStrategy": "1. Validate keyword detection against known buyer/non-buyer patterns\n2. Test readiness scoring correlates with actual sale outcomes\n3. Check false positive/negative rates\n4. Compare keyword effectiveness across tiers",
+        "priority": "low",
+        "dependencies": [
+          "45"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "47",
+        "title": "Create enhanced chatter profiles with objection specializations",
+        "description": "Extend existing chatter profiles to include per-chatter objection handling strengths. Identify which chatters handle which objections best and generate style recommendations based on data.",
+        "details": "Extend `scripts/analysis/chatter_analysis.py`:\n\n```python\n@dataclass\nclass EnhancedChatterProfile(ChatterProfile):\n    # Add new fields to existing ChatterProfile\n    objection_strengths: Dict[str, float]  # objection_type -> success_rate\n    best_objection_type: str\n    worst_objection_type: str\n    recommended_subscriber_types: List[str]  # e.g., ['budget-conscious', 'whale']\n    style_recommendation: str\n\ndef enhance_chatter_profiles(\n    profiles: Dict[str, ChatterProfile],\n    objection_responses: List[ObjectionResponse]\n) -> Dict[str, EnhancedChatterProfile]:\n    # Cross-reference chatter profiles with objection data\n    # Calculate per-chatter objection success rates\n    # Generate recommendations\n    \n    for name, profile in profiles.items():\n        chatter_responses = [r for r in objection_responses if r.response_chatter == name]\n        # Group by objection type\n        # Calculate success rates\n        # Identify strengths/weaknesses\n        \n    return enhanced_profiles\n\ndef generate_chatter_recommendation(profile: EnhancedChatterProfile) -> str:\n    # Based on data, recommend:\n    # - What tier to focus on\n    # - What objections they handle best\n    # - Style adjustments based on approach distribution\n```\n\nUpdate `data/insights/chatter_analysis.md` with enhanced profiles.",
+        "testStrategy": "1. Verify objection success rates calculated correctly per chatter\n2. Validate strength/weakness identification\n3. Review generated recommendations for reasonableness\n4. Cross-check with existing chatter analysis metrics",
+        "priority": "low",
+        "dependencies": [
+          "39",
+          "40"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "48",
+        "title": "Integrate all analysis modules into pipeline",
+        "description": "Extend run_full_analysis.py to incorporate all new analysis modules (objection analysis, conversation flow, pricing analysis, phrase extraction). Ensure outputs are generated in correct format and location.",
+        "details": "Modify `scripts/analysis/run_full_analysis.py`:\n\n```python\ndef run_full_pipeline(...):\n    # Existing stages...\n    \n    # Stage 5: Objection Analysis (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 5: OBJECTION ANALYSIS ===[/bold cyan]\")\n    from scripts.analysis.objection_analysis import run_objection_analysis\n    objection_results = run_objection_analysis(input_path, output_path)\n    results['stages']['objection_analysis'] = {...}\n    \n    # Stage 6: Conversation Flow Analysis (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 6: CONVERSATION FLOW ===[/bold cyan]\")\n    from scripts.analysis.conversation_flow import run_flow_analysis\n    flow_results = run_flow_analysis(input_path, output_path)\n    \n    # Stage 7: Pricing Analysis (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 7: PRICING ANALYSIS ===[/bold cyan]\")\n    from scripts.analysis.pricing_analysis import run_pricing_analysis\n    \n    # Stage 8: Phrase Extraction (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 8: PHRASE EXTRACTION ===[/bold cyan]\")\n    from scripts.analysis.phrase_extraction import run_phrase_extraction\n    \n    # Stage 9: Enhanced Chatter Profiles (NEW)\n    from scripts.analysis.chatter_analysis import enhance_chatter_profiles\n```\n\nUpdate output summary to include all new deliverables.",
+        "testStrategy": "1. Run full pipeline end-to-end\n2. Verify all output files are generated in correct locations\n3. Check pipeline_results.json includes all stages\n4. Validate no stage failures or missing data",
+        "priority": "low",
+        "dependencies": [
+          "40",
+          "42",
+          "43",
+          "44",
+          "45",
+          "47"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "49",
+        "title": "Generate comprehensive output deliverables",
+        "description": "Create all PRD-specified output documents: Objection Handling Playbook (MD+JSON), Conversation Flow Guide, Pricing Strategy Guide, Language Pattern Database (JSON), and Enhanced Chatter Profiles. Ensure consistent formatting and actionable recommendations.",
+        "details": "Create `scripts/analysis/report_generator.py`:\n\n```python\ndef generate_all_deliverables(analysis_results: Dict, output_dir: Path):\n    # 1. Objection Handling Playbook\n    generate_objection_playbook_md(analysis_results, output_dir / 'objection_playbook.md')\n    generate_objection_playbook_json(analysis_results, output_dir / 'raw/objection_playbook.json')\n    \n    # 2. Conversation Flow Guide\n    generate_flow_guide(\n        openers=analysis_results['openers'],\n        closings=analysis_results['closings'],\n        length_optimization=analysis_results['conversation_length'],\n        output_path=output_dir / 'conversation_flow_guide.md'\n    )\n    \n    # 3. Pricing Strategy Guide\n    generate_pricing_guide(\n        price_analysis=analysis_results['pricing'],\n        output_path=output_dir / 'pricing_strategy_guide.md'\n    )\n    \n    # 4. Language Pattern Database (JSON)\n    generate_language_database(\n        power_phrases=analysis_results['phrases'],\n        qualification_keywords=analysis_results['keywords'],\n        output_path=output_dir / 'raw/language_patterns.json'\n    )\n    \n    # 5. Enhanced Chatter Profiles\n    # Already generated by chatter_analysis.py\n```\n\nOutput structure:\n```\ndata/insights/\n├── objection_playbook.md\n├── conversation_flow_guide.md\n├── pricing_strategy_guide.md\n├── chatter_analysis.md (enhanced)\n├── raw/\n│   ├── objection_playbook.json\n│   ├── language_patterns.json\n│   └── ...\n```",
+        "testStrategy": "1. Verify all 5 deliverables are generated\n2. Check Markdown formatting is valid\n3. Validate JSON structure matches expected schema\n4. Review content for actionable 'do this, not that' guidance (PRD requirement)",
+        "priority": "low",
+        "dependencies": [
+          "48"
+        ],
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-22T07:00:09.601Z",
-      "taskCount": 20,
-      "completedCount": 20,
+      "lastModified": "2025-12-22T08:13:12.619Z",
+      "taskCount": 34,
+      "completedCount": 23,
       "tags": [
         "master"
       ]
