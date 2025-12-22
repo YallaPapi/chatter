@@ -1,0 +1,335 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "16",
+        "title": "Data Loader Module with Conversation Thread Grouping",
+        "description": "Create the data_loader.py module that loads all 13,579+ parsed conversations, groups them by folder (conversation thread), and applies subscriber tier classification.",
+        "details": "Create `scripts/analysis/data_loader.py` with:\n\n1. **ConversationThread dataclass**:\n```python\n@dataclass\nclass ConversationThread:\n    thread_id: str  # folder path as unique ID\n    chatter: str  # extracted from path (e.g., 'Arvin')\n    title: str  # folder name (e.g., '$120 casual chat with a spender')\n    screenshots: List[ParsedScreenshot]  # ordered by filename\n    subscriber_stats: SubscriberStats  # aggregated from first screenshot with data\n    outcome: ThreadOutcome  # aggregated outcome (any sale in thread)\n```\n\n2. **SubscriberTier enum**:\n```python\nclass SubscriberTier(str, Enum):\n    NEW = \"new\"  # $0 or null total_spent\n    LOW = \"low\"  # $1-199\n    MEDIUM = \"medium\"  # $200-999\n    HIGH = \"high\"  # $1000-4999\n    WHALE = \"whale\"  # $5000+\n```\n\n3. **Functions**:\n- `load_all_conversations(parsed_dir: Path) -> List[dict]` - Load all .parsed.json files\n- `group_by_thread(conversations: List[dict]) -> List[ConversationThread]` - Group by folder path\n- `classify_tier(total_spent: Optional[float]) -> SubscriberTier` - Apply tier rules\n- `get_threads_by_tier(threads: List[ConversationThread]) -> Dict[SubscriberTier, List[ConversationThread]]`\n- `generate_data_quality_report(threads: List[ConversationThread]) -> DataQualityReport`\n\n4. **DataQualityReport** includes:\n- Total files loaded, valid conversations, empty conversations\n- Field completeness rates (subscriber_stats, outcome, context)\n- Tier distribution statistics\n- Multi-screenshot thread count vs single-screenshot count",
+        "testStrategy": "Load all 13,579 parsed conversations and verify count. Test tier classification with edge cases ($0, $199, $200, $999, $1000, $4999, $5000). Verify thread grouping produces correct screenshot counts per folder. Generate data quality report and verify all statistics.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:35:09.606Z"
+      },
+      {
+        "id": "17",
+        "title": "Tier Distribution Statistical Analysis",
+        "description": "Implement statistical analysis of conversation distribution across subscriber tiers, including sale amounts, tip frequency, and spending patterns per tier.",
+        "details": "Create `scripts/analysis/statistical_analysis.py` with:\n\n1. **TierStatistics dataclass**:\n```python\n@dataclass\nclass TierStatistics:\n    tier: SubscriberTier\n    conversation_count: int\n    thread_count: int\n    sale_count: int\n    tip_count: int\n    total_sale_amount: float\n    total_tip_amount: float\n    avg_sale_amount: float\n    median_sale_amount: float\n    min_sale_amount: float\n    max_sale_amount: float\n    avg_highest_purchase: float\n    ppv_sent_count: int\n```\n\n2. **Functions**:\n- `calculate_tier_statistics(threads_by_tier: Dict) -> Dict[SubscriberTier, TierStatistics]`\n- `calculate_sale_distribution(tier_stats: TierStatistics) -> SaleDistribution` (histogram bins)\n- `calculate_upselling_patterns(threads: List) -> UpsellingAnalysis` (sale_amount vs highest_purchase relationship)\n\n3. **Output**: `data/insights/raw/tier_statistics.json` with complete breakdown per tier\n\n4. **Key insight from PRD**: This data has selection bias (100% success), so we're characterizing what success looks like, NOT calculating conversion rates.",
+        "testStrategy": "Run tier statistics on full dataset. Verify all 5 tiers have data. Verify sale amounts sum correctly. Check that avg/median/min/max calculations are accurate by spot-checking against raw data.",
+        "priority": "high",
+        "dependencies": [
+          "16"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:37:40.608Z"
+      },
+      {
+        "id": "18",
+        "title": "Approach and Stage Distribution by Tier",
+        "description": "Analyze how creator approaches (playful, teasing, transactional) and conversation stages (opening, pitching, closing) vary across subscriber tiers.",
+        "details": "Add to `scripts/analysis/statistical_analysis.py`:\n\n1. **ApproachByTier analysis**:\n```python\n@dataclass\nclass ApproachDistribution:\n    tier: SubscriberTier\n    approach_counts: Dict[str, int]  # approach -> count\n    approach_with_sale: Dict[str, int]  # approach -> sale count\n    most_common_approach: str\n    most_successful_approach: str  # highest sale count\n```\n\n2. **StageByTier analysis**:\n```python\n@dataclass\nclass StageDistribution:\n    tier: SubscriberTier\n    stage_counts: Dict[str, int]\n    stage_with_sale: Dict[str, int]\n    most_common_stage: str\n```\n\n3. **Functions**:\n- `analyze_approaches_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, ApproachDistribution]`\n- `analyze_stages_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, StageDistribution]`\n- `correlate_approach_to_outcome(threads: List) -> ApproachOutcomeCorrelation`\n\n4. **Output**: `data/insights/raw/approach_distribution.json` and `data/insights/raw/stage_distribution.json`\n\n5. **Key questions to answer**:\n- Do chatters change approach based on subscriber value?\n- Which approaches appear most often in high-value sales?\n- What stage do most successful conversations occur in per tier?",
+        "testStrategy": "Verify approach/stage counts sum to total conversations per tier. Cross-check 'teasing' and 'transactional' approach counts against existing training_insights.json. Verify most_common calculations are correct.",
+        "priority": "high",
+        "dependencies": [
+          "16",
+          "17"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:40:39.289Z"
+      },
+      {
+        "id": "19",
+        "title": "Mood-Approach Correlation Analysis",
+        "description": "Analyze the relationship between subscriber mood and creator approach, identifying which approaches work best for each mood state.",
+        "details": "Add to `scripts/analysis/statistical_analysis.py`:\n\n1. **MoodApproachMatrix**:\n```python\n@dataclass\nclass MoodApproachMatrix:\n    matrix: Dict[str, Dict[str, int]]  # mood -> approach -> count\n    mood_distribution: Dict[str, int]  # mood -> total count\n    approach_for_mood: Dict[str, str]  # mood -> most used approach\n    mood_by_tier: Dict[SubscriberTier, Dict[str, int]]  # tier -> mood distribution\n```\n\n2. **Functions**:\n- `build_mood_approach_matrix(threads: List) -> MoodApproachMatrix`\n- `get_recommended_approach_for_mood(mood: str, matrix: MoodApproachMatrix) -> str`\n- `analyze_technique_by_mood(threads: List) -> Dict[str, Dict[str, int]]` (mood -> technique -> count)\n\n3. **Output**: `data/insights/raw/mood_approach_matrix.json`\n\n4. **Key output for training**: Quick reference card showing mood-to-approach mapping for chatters",
+        "testStrategy": "Verify matrix sums match total conversations. Test with known moods (eager, hesitant, flirty, cold). Verify approach recommendations are logical (e.g., hesitant subscribers shouldn't get transactional approach).",
+        "priority": "medium",
+        "dependencies": [
+          "16"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:40:45.473Z"
+      },
+      {
+        "id": "20",
+        "title": "Message Content Analysis - Length and Ratio",
+        "description": "Analyze message-level metrics including average length, message counts, and creator talk-to-listen ratio across tiers.",
+        "details": "Create `scripts/analysis/message_analysis.py`:\n\n1. **MessageMetrics dataclass**:\n```python\n@dataclass\nclass MessageMetrics:\n    avg_creator_message_length: float\n    avg_subscriber_message_length: float\n    avg_message_count_per_thread: float\n    creator_to_subscriber_ratio: float  # talk-to-listen ratio\n    avg_creator_messages_per_thread: float\n    avg_subscriber_messages_per_thread: float\n```\n\n2. **Functions**:\n- `calculate_message_metrics(threads: List) -> MessageMetrics`\n- `calculate_metrics_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, MessageMetrics]`\n- `calculate_metrics_by_outcome(threads: List) -> Dict[str, MessageMetrics]` (sale vs no_sale in screenshot)\n\n3. **Key insights to extract**:\n- Do successful sales have different message length patterns?\n- What is the optimal talk-to-listen ratio?\n- Do whales get longer messages or shorter?\n\n4. **Output**: `data/insights/raw/message_analysis.json`",
+        "testStrategy": "Verify message counts by sampling 10 threads and manually counting. Verify ratio calculations. Check that empty messages (no text) don't skew averages.",
+        "priority": "medium",
+        "dependencies": [
+          "16"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:45:08.073Z"
+      },
+      {
+        "id": "21",
+        "title": "Keyword Extraction from Messages",
+        "description": "Extract most frequent words and phrases from creator and subscriber messages, identifying tier-specific language patterns and keywords correlated with sales.",
+        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **KeywordAnalysis dataclass**:\n```python\n@dataclass\nclass KeywordAnalysis:\n    creator_top_words: List[Tuple[str, int]]  # (word, count)\n    subscriber_top_words: List[Tuple[str, int]]\n    creator_top_phrases: List[Tuple[str, int]]  # 2-3 word phrases\n    subscriber_top_phrases: List[Tuple[str, int]]\n    sale_correlated_keywords: List[Tuple[str, float]]  # (word, correlation_score)\n```\n\n2. **Functions**:\n- `extract_keywords(messages: List[dict], role: str, top_n: int = 100) -> List[Tuple[str, int]]`\n- `extract_phrases(messages: List[dict], role: str, ngram_range: Tuple[int, int] = (2, 3)) -> List[Tuple[str, int]]`\n- `analyze_keywords_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, KeywordAnalysis]`\n- `find_sale_correlated_keywords(threads: List) -> List[Tuple[str, float]]`\n\n3. **Stop words filtering**: Remove common words (the, a, an, is, etc.) and platform-specific noise (PPV, sent, etc.)\n\n4. **Output**: `data/insights/raw/keyword_analysis.json`",
+        "testStrategy": "Verify stop words are filtered. Check keyword counts by searching raw data for top keywords. Verify tier-specific patterns differ (e.g., whales may have different language).",
+        "priority": "medium",
+        "dependencies": [
+          "16",
+          "20"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:45:14.908Z"
+      },
+      {
+        "id": "22",
+        "title": "Opener Analysis - First Message Patterns",
+        "description": "Analyze first creator message patterns to identify successful opening hooks and greeting styles that lead to sales.",
+        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **OpenerAnalysis dataclass**:\n```python\n@dataclass\nclass OpenerAnalysis:\n    total_openers_analyzed: int\n    opener_patterns: List[OpenerPattern]\n    greeting_styles: Dict[str, int]  # style -> count\n    opener_length_distribution: Dict[str, int]  # 'short'/'medium'/'long' -> count\n    openers_with_emoji_count: int\n    personalization_rate: float  # % with names or specific references\n```\n\n2. **OpenerPattern dataclass**:\n```python\n@dataclass\nclass OpenerPattern:\n    pattern_type: str  # 'greeting', 'question', 'compliment', 'teasing', 'direct'\n    example_texts: List[str]  # up to 5 examples\n    count: int\n    sale_rate_in_thread: float  # % of threads with this opener that had a sale\n```\n\n3. **Functions**:\n- `extract_openers(threads: List) -> List[str]` - Get first creator message from each thread\n- `classify_opener(text: str) -> str` - Classify opener type (greeting, question, etc.)\n- `analyze_openers_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, OpenerAnalysis]`\n\n4. **Output**: `data/insights/raw/opener_analysis.json`",
+        "testStrategy": "Verify opener count matches thread count. Sample 20 openers and verify classification is correct. Check that opener patterns include diverse examples.",
+        "priority": "medium",
+        "dependencies": [
+          "16"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:45:21.559Z"
+      },
+      {
+        "id": "23",
+        "title": "Closing Language Analysis - Money Request Patterns",
+        "description": "Analyze how creators ask for money, including tip request phrasing, PPV pitch language, and price presentation patterns.",
+        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **ClosingAnalysis dataclass**:\n```python\n@dataclass\nclass ClosingAnalysis:\n    tip_request_patterns: List[Tuple[str, int]]  # (pattern, count)\n    ppv_pitch_patterns: List[Tuple[str, int]]\n    price_mention_patterns: List[Tuple[str, int]]\n    urgency_phrases: List[Tuple[str, int]]  # 'limited time', 'just for you', etc.\n    value_building_phrases: List[Tuple[str, int]]  # 'special', 'exclusive', etc.\n```\n\n2. **Functions**:\n- `extract_closing_messages(threads: List) -> List[str]` - Find messages with $ amounts or tip/PPV keywords\n- `analyze_tip_requests(messages: List[str]) -> List[Tuple[str, int]]` - Extract tip request patterns\n- `analyze_ppv_pitches(messages: List[str]) -> List[Tuple[str, int]]` - Extract PPV pitch patterns\n- `analyze_price_anchoring(threads: List) -> PriceAnchoringAnalysis` - How do chatters present prices?\n\n3. **Regex patterns to detect**:\n- `r'tip\\s*(me|\\$)?\\s*(\\d+)?'` - tip requests\n- `r'\\$\\d+' or 'PPV'` - price mentions\n- `r'just\\s*(for|4)\\s*you'` - personalization\n\n4. **Output**: `data/insights/raw/closing_analysis.json`",
+        "testStrategy": "Verify patterns are extracted from messages containing $ or tip keywords. Sample 10 tip requests and verify pattern matching. Check urgency/value phrases are relevant.",
+        "priority": "medium",
+        "dependencies": [
+          "16",
+          "20"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:45:28.384Z"
+      },
+      {
+        "id": "24",
+        "title": "Objection Handling Analysis",
+        "description": "Identify hesitant subscriber messages and analyze creator responses to objections, including price negotiation patterns.",
+        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **ObjectionAnalysis dataclass**:\n```python\n@dataclass\nclass ObjectionAnalysis:\n    objection_types: Dict[str, int]  # type -> count\n    objection_responses: Dict[str, List[str]]  # type -> example responses\n    negotiation_patterns: List[NegotiationPattern]\n    objection_overcome_rate: float  # % of threads with objection that still had sale\n```\n\n2. **ObjectionType enum**:\n```python\nclass ObjectionType(str, Enum):\n    NO_MONEY = \"no_money\"  # 'broke', 'can't afford'\n    TOO_EXPENSIVE = \"too_expensive\"  # 'too much', 'that's a lot'\n    MAYBE_LATER = \"maybe_later\"  # 'payday', 'later', 'next time'\n    NOT_INTERESTED = \"not_interested\"  # 'not really', 'nah'\n    WANT_FREE = \"want_free\"  # 'send for free', 'preview'\n```\n\n3. **Functions**:\n- `detect_objection_messages(messages: List[dict]) -> List[Tuple[dict, ObjectionType]]`\n- `extract_objection_responses(thread: ConversationThread) -> List[Tuple[ObjectionType, str]]`\n- `analyze_negotiation_patterns(threads: List) -> List[NegotiationPattern]`\n\n4. **Key patterns to extract**:\n- How do chatters respond to 'I'm broke'?\n- What happens when someone says 'too expensive'?\n- Price reduction patterns and their success\n\n5. **Output**: `data/insights/raw/objection_analysis.json`",
+        "testStrategy": "Search for 'broke', 'afford', 'expensive' in subscriber messages and verify detection. Check objection responses are the next creator message. Verify negotiation patterns include price adjustments.",
+        "priority": "high",
+        "dependencies": [
+          "16",
+          "20"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:45:34.928Z"
+      },
+      {
+        "id": "25",
+        "title": "Full Conversation Thread Analysis with AI",
+        "description": "Use GPT-5.2 to analyze complete multi-screenshot conversation threads to identify conversation arc patterns and escalation sequences.",
+        "details": "Create `scripts/analysis/ai_pattern_analysis.py`:\n\n1. **ThreadAnalysis dataclass**:\n```python\n@dataclass\nclass ThreadAnalysis:\n    thread_id: str\n    arc_type: str  # 'rapport_to_sale', 'quick_close', 'slow_burn', 'objection_overcome'\n    escalation_steps: List[str]  # ['greeting', 'flirting', 'tease', 'offer', 'close']\n    key_turning_points: List[str]  # messages that shifted the conversation\n    techniques_used: List[str]\n    estimated_sale_probability: float\n```\n\n2. **Functions**:\n- `prepare_thread_for_analysis(thread: ConversationThread) -> str` - Combine all screenshots into single conversation text\n- `analyze_thread_arc(thread_text: str, subscriber_stats: dict) -> ThreadAnalysis` - Call GPT-5.2\n- `batch_analyze_threads(threads: List, batch_size: int = 50) -> List[ThreadAnalysis]`\n- `aggregate_arc_patterns(analyses: List[ThreadAnalysis]) -> ArcPatternSummary`\n\n3. **GPT-5.2 prompt**:\n```\nAnalyze this OnlyFans conversation thread and identify:\n1. Conversation arc type (rapport_to_sale, quick_close, slow_burn, objection_overcome)\n2. Escalation steps taken by the creator\n3. Key turning points that led to the sale\n4. Sales techniques used\n5. What made this conversation successful\n\nSubscriber Profile: {tier}, ${total_spent} lifetime spend\nConversation:\n{thread_text}\n```\n\n4. **Batch processing**: Process in chunks of 50-100 to manage API costs\n5. **Checkpointing**: Save progress for resumability\n\n6. **Output**: `data/insights/raw/conversation_threads.json`",
+        "testStrategy": "Run on 100 multi-screenshot threads. Verify arc types are valid. Spot-check 10 analyses against original conversations. Verify batch processing handles API errors gracefully.",
+        "priority": "high",
+        "dependencies": [
+          "16"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:56:32.885Z"
+      },
+      {
+        "id": "26",
+        "title": "Tier-Specific Playbook Extraction - New Subscribers",
+        "description": "Use GPT-5.2 to analyze new subscriber ($0 total_spent) conversations and extract a playbook with openers, pitch timing, and typical first sale amounts.",
+        "details": "Create `scripts/analysis/playbook_generator.py`:\n\n1. **Filter new subscribers**: total_spent == 0 or null\n\n2. **NewSubscriberPlaybook dataclass**:\n```python\n@dataclass\nclass NewSubscriberPlaybook:\n    tier: str = \"new\"\n    sample_size: int\n    effective_openers: List[str]  # Top 10 opener templates\n    pitch_timing: PitchTimingAnalysis  # How quickly do chatters pitch?\n    first_sale_amounts: SaleAmountDistribution\n    typical_first_offer: str  # 'PPV', 'tip request', 'custom'\n    do_list: List[str]  # 5-7 recommended actions\n    dont_list: List[str]  # 5-7 things to avoid\n    script_templates: List[ScriptTemplate]\n```\n\n3. **GPT-5.2 analysis prompt**:\n```\nAnalyze these {n} successful conversations with NEW subscribers (first-time buyers).\nExtract:\n1. What openers work best?\n2. How quickly do successful chatters pitch (message count before first offer)?\n3. What's the typical first sale amount?\n4. Top 5 Do's for new subscribers\n5. Top 5 Don'ts for new subscribers\n6. 3 script templates that worked well\n\nConversation summaries:\n{summaries}\n```\n\n4. **Output**: `data/insights/playbooks/new_subscriber_playbook.md`",
+        "testStrategy": "Verify playbook is generated from new subscriber data only. Check first sale amounts are realistic ($3-10 range). Verify script templates are copy-paste ready.",
+        "priority": "high",
+        "dependencies": [
+          "16",
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:56:37.089Z"
+      },
+      {
+        "id": "27",
+        "title": "Tier-Specific Playbook Extraction - Low/Medium Spenders",
+        "description": "Generate playbooks for low ($1-199) and medium ($200-999) spenders focusing on repeat purchase patterns and upselling strategies.",
+        "details": "Add to `scripts/analysis/playbook_generator.py`:\n\n1. **RepeatBuyerPlaybook dataclass**:\n```python\n@dataclass\nclass RepeatBuyerPlaybook:\n    tier: str  # 'low' or 'medium'\n    sample_size: int\n    repeat_purchase_triggers: List[str]  # What brings them back?\n    price_tolerance_analysis: PriceToleranceAnalysis\n    upselling_patterns: List[UpsellingPattern]\n    engagement_maintenance: List[str]  # How to keep them engaged\n    do_list: List[str]\n    dont_list: List[str]\n    script_templates: List[ScriptTemplate]\n```\n\n2. **Key analysis questions**:\n- What builds repeat purchases?\n- How do chatters identify price tolerance?\n- What upselling sequences work?\n\n3. **GPT-5.2 prompt** (separate for low vs medium):\n```\nAnalyze these {n} conversations with {tier} SPENDERS (${range} lifetime spend).\nThese are repeat buyers. Extract:\n1. What triggers repeat purchases?\n2. How do chatters gauge price tolerance?\n3. Successful upselling patterns\n4. How to maintain engagement between sales\n5. Do's and Don'ts for this tier\n6. Script templates for upselling\n\nConversation summaries:\n{summaries}\n```\n\n4. **Output**: \n- `data/insights/playbooks/low_spender_playbook.md`\n- `data/insights/playbooks/medium_spender_playbook.md`",
+        "testStrategy": "Verify low spender playbook focuses on $5-20 price points. Verify medium spender playbook has higher price tolerance. Check upselling patterns are logical sequences.",
+        "priority": "high",
+        "dependencies": [
+          "16",
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:56:41.160Z"
+      },
+      {
+        "id": "28",
+        "title": "Tier-Specific Playbook Extraction - High Spenders and Whales",
+        "description": "Generate playbooks for high ($1000-4999) and whale ($5000+) subscribers focusing on relationship maintenance, VIP treatment, and high-ticket sales.",
+        "details": "Add to `scripts/analysis/playbook_generator.py`:\n\n1. **VIPPlaybook dataclass**:\n```python\n@dataclass\nclass VIPPlaybook:\n    tier: str  # 'high' or 'whale'\n    sample_size: int\n    relationship_patterns: List[str]  # How to maintain relationship\n    premium_content_patterns: List[str]  # What premium content do they buy?\n    custom_content_analysis: CustomContentAnalysis\n    vip_treatment_language: List[str]  # Special language for VIPs\n    high_ticket_patterns: List[str]  # Patterns for $100+ sales\n    do_list: List[str]\n    dont_list: List[str]\n    script_templates: List[ScriptTemplate]\n```\n\n2. **Key analysis questions**:\n- What keeps high spenders engaged?\n- What premium content patterns emerge?\n- How do chatters handle custom requests?\n- What language signals VIP treatment?\n\n3. **GPT-5.2 prompt**:\n```\nAnalyze these {n} conversations with {tier} SPENDERS (${range}+ lifetime spend).\nThese are VIP/whale subscribers. Extract:\n1. What keeps them engaged long-term?\n2. Premium content patterns (what do they buy?)\n3. Custom content request handling\n4. VIP treatment language patterns\n5. High-ticket sale patterns ($100+)\n6. Do's and Don'ts for VIPs\n7. Script templates for premium offers\n\nConversation summaries:\n{summaries}\n```\n\n4. **Output**:\n- `data/insights/playbooks/high_spender_playbook.md`\n- `data/insights/playbooks/whale_playbook.md`",
+        "testStrategy": "Verify whale playbook includes language appropriate for high spenders. Check high-ticket patterns reference $50+ amounts. Verify VIP treatment language is distinct from lower tiers.",
+        "priority": "high",
+        "dependencies": [
+          "16",
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:56:45.333Z"
+      },
+      {
+        "id": "29",
+        "title": "Script Template Extraction and Formatting",
+        "description": "Extract and templatize copy-paste ready scripts for openers, tip requests, PPV pitches, and objection handlers from successful conversations.",
+        "details": "Create `scripts/analysis/template_extractor.py`:\n\n1. **ScriptTemplate dataclass**:\n```python\n@dataclass\nclass ScriptTemplate:\n    id: str\n    category: str  # 'opener', 'tip_request', 'ppv_pitch', 'objection_handler'\n    template_text: str  # With placeholders like {subscriber_name}, {price}\n    variables: List[str]  # ['subscriber_name', 'price']\n    tier_suitability: List[SubscriberTier]\n    usage_count: int  # How many times similar pattern appeared\n    example_conversations: List[str]  # 3 example usages\n```\n\n2. **Template categories**:\n- **Openers**: greeting templates, personalized openers, re-engagement openers\n- **Tip requests**: casual asks, flirty asks, gratitude-based asks\n- **PPV pitches**: teasing, direct, bundled offers, limited-time\n- **Objection handlers**: for 'broke', 'too expensive', 'maybe later', 'want free'\n\n3. **Functions**:\n- `extract_opener_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `extract_tip_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `extract_ppv_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `extract_objection_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `templatize_message(message: str) -> Tuple[str, List[str]]` - Replace specifics with placeholders\n\n4. **Output**:\n- `data/insights/templates/openers.json`\n- `data/insights/templates/tip_requests.json`\n- `data/insights/templates/ppv_pitches.json`\n- `data/insights/templates/objection_handlers.json`",
+        "testStrategy": "Verify at least 15 templates per category. Check templates have placeholders, not specific names/prices. Verify tier_suitability is set appropriately. Test templatize_message with sample messages.",
+        "priority": "high",
+        "dependencies": [
+          "16",
+          "22",
+          "23",
+          "24"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:56:49.498Z"
+      },
+      {
+        "id": "30",
+        "title": "Technique Deep Dive Analysis",
+        "description": "Analyze top sales techniques (teasing, transactional, playful) in depth using GPT-5.2 to extract specific script patterns and identify when each technique is most appropriate.",
+        "details": "Add to `scripts/analysis/ai_pattern_analysis.py`:\n\n1. **TechniqueAnalysis dataclass**:\n```python\n@dataclass\nclass TechniqueAnalysis:\n    technique_name: str\n    total_occurrences: int\n    sale_success_count: int\n    avg_sale_amount: float\n    best_for_tiers: List[SubscriberTier]\n    best_for_moods: List[str]\n    script_patterns: List[str]  # Specific language patterns\n    when_to_use: List[str]  # Situations where this works\n    when_to_avoid: List[str]  # Situations where this fails\n    example_scripts: List[str]  # 5 real examples\n```\n\n2. **Analyze top 5 techniques from existing data**:\n- teasing (559 occurrences)\n- transactional (158)\n- direct (113)\n- playful (57)\n- playful teasing (30)\n\n3. **GPT-5.2 prompt per technique**:\n```\nAnalyze these {n} conversations using the \"{technique}\" technique.\nExtract:\n1. Specific script patterns that define this technique\n2. When this technique works best (subscriber tier, mood)\n3. When to avoid this technique\n4. 5 copy-paste ready example scripts\n5. How to transition into and out of this technique\n\nConversations:\n{conversations}\n```\n\n4. **Output**: `data/insights/raw/technique_deep_dive.json`",
+        "testStrategy": "Verify all top 5 techniques are analyzed. Check script patterns are specific to each technique. Verify when_to_use/when_to_avoid are actionable. Verify example scripts are real excerpts.",
+        "priority": "medium",
+        "dependencies": [
+          "16",
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:56:53.648Z"
+      },
+      {
+        "id": "31",
+        "title": "Underperformance Pattern Analysis",
+        "description": "Identify conversations where sale amount is low relative to subscriber tier and analyze potential improvement patterns.",
+        "details": "Add to `scripts/analysis/ai_pattern_analysis.py`:\n\n1. **Define underperformance**:\n- Whale ($5000+ lifetime) with sale < $50\n- High spender ($1000+) with sale < $25\n- Medium spender ($200+) with sale < $15\n\n2. **UnderperformanceAnalysis dataclass**:\n```python\n@dataclass\nclass UnderperformanceAnalysis:\n    tier: SubscriberTier\n    underperforming_count: int\n    total_in_tier: int\n    underperformance_rate: float\n    common_issues: List[str]  # What went wrong?\n    missed_opportunities: List[str]  # What could have been done?\n    improvement_suggestions: List[str]\n```\n\n3. **Functions**:\n- `identify_underperforming_conversations(threads_by_tier: Dict) -> List[ConversationThread]`\n- `analyze_underperformance(threads: List) -> Dict[SubscriberTier, UnderperformanceAnalysis]`\n\n4. **GPT-5.2 prompt**:\n```\nThese conversations are with {tier} subscribers (${range} lifetime spend) but resulted in only ${sale_amount} sales.\nThis may be underperformance. Analyze:\n1. What went wrong in these conversations?\n2. What opportunities were missed?\n3. How could the chatter have done better?\n\nConversations:\n{conversations}\n```\n\n5. **Output**: `data/insights/raw/underperformance_analysis.json`\n\n**Note from PRD**: This is still success-only data, so we're comparing relative success, not true failures.",
+        "testStrategy": "Verify underperformance thresholds are applied correctly. Check that high spenders with small sales are flagged. Verify improvement suggestions are actionable.",
+        "priority": "low",
+        "dependencies": [
+          "16",
+          "17"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:59:52.732Z"
+      },
+      {
+        "id": "32",
+        "title": "Quick Reference Card Generator",
+        "description": "Generate quick reference cards for chatters including mood-to-approach mapping, price anchoring guidelines, and tier-specific do's/don'ts.",
+        "details": "Create `scripts/analysis/reference_card_generator.py`:\n\n1. **QuickReferenceCards dataclass**:\n```python\n@dataclass\nclass QuickReferenceCards:\n    mood_to_approach: Dict[str, str]  # mood -> recommended approach\n    approach_scripts: Dict[str, List[str]]  # approach -> quick scripts\n    price_anchoring: Dict[SubscriberTier, PriceGuidelines]\n    tier_dos_donts: Dict[SubscriberTier, DosDonts]\n    objection_responses: Dict[str, List[str]]  # objection -> quick responses\n    emoji_usage: Dict[str, List[str]]  # situation -> recommended emojis\n```\n\n2. **PriceGuidelines dataclass**:\n```python\n@dataclass\nclass PriceGuidelines:\n    tier: SubscriberTier\n    first_sale_range: Tuple[int, int]\n    regular_sale_range: Tuple[int, int]\n    max_recommended: int\n    discount_threshold: int  # When to offer discount\n    price_increase_strategy: str\n```\n\n3. **Functions**:\n- `generate_mood_approach_card(matrix: MoodApproachMatrix) -> Dict[str, str]`\n- `generate_price_guidelines(tier_stats: Dict) -> Dict[SubscriberTier, PriceGuidelines]`\n- `generate_dos_donts(playbooks: List) -> Dict[SubscriberTier, DosDonts]`\n- `compile_quick_reference(all_analysis: Dict) -> QuickReferenceCards`\n\n4. **Output**:\n- `data/insights/playbooks/quick_reference_cards.md` (markdown for printing)\n- `data/insights/playbooks/quick_reference_cards.json` (structured data)",
+        "testStrategy": "Verify all moods have an approach mapped. Check price guidelines match tier definitions. Verify quick reference is concise (printable on 1-2 pages).",
+        "priority": "medium",
+        "dependencies": [
+          "19",
+          "26",
+          "27",
+          "28",
+          "29"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T06:59:56.875Z"
+      },
+      {
+        "id": "33",
+        "title": "Dashboard Data Export",
+        "description": "Export all analysis data in a structured format suitable for frontend visualization, including key metrics, trend data, and comparison charts.",
+        "details": "Create `scripts/analysis/dashboard_export.py`:\n\n1. **DashboardData dataclass**:\n```python\n@dataclass\nclass DashboardData:\n    summary_metrics: SummaryMetrics\n    tier_comparison: TierComparisonData\n    approach_effectiveness: ApproachEffectivenessData\n    stage_distribution: StageDistributionData\n    technique_rankings: TechniqueRankingData\n    time_series: Optional[TimeSeriesData]  # If timestamps available\n    word_clouds: Dict[str, List[Tuple[str, int]]]  # category -> word counts\n```\n\n2. **SummaryMetrics**:\n```python\n@dataclass\nclass SummaryMetrics:\n    total_conversations: int\n    total_threads: int\n    total_sale_amount: float\n    total_tip_amount: float\n    avg_sale_amount: float\n    tier_distribution: Dict[str, int]\n    top_technique: str\n    top_approach: str\n```\n\n3. **Chart-ready data structures**:\n- `TierComparisonData`: Bar chart data for sale amounts by tier\n- `ApproachEffectivenessData`: Pie/bar chart for approach distribution\n- `StageDistributionData`: Funnel visualization data\n- `TechniqueRankingData`: Horizontal bar chart data\n\n4. **Functions**:\n- `compile_dashboard_data(all_analysis: Dict) -> DashboardData`\n- `export_for_recharts(data: DashboardData) -> Dict` - Format for React/Recharts\n- `export_for_chartjs(data: DashboardData) -> Dict` - Format for Chart.js\n\n5. **Output**: `data/insights/dashboard_data.json`",
+        "testStrategy": "Verify dashboard_data.json loads without errors. Check all chart data has correct structure for visualization. Verify summary metrics match raw statistics.",
+        "priority": "medium",
+        "dependencies": [
+          "17",
+          "18",
+          "19",
+          "20",
+          "21"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T07:00:01.060Z"
+      },
+      {
+        "id": "34",
+        "title": "Training Summary Document Generator",
+        "description": "Generate a comprehensive training summary document combining all analysis results into a human-readable markdown file for chatter training.",
+        "details": "Create `scripts/analysis/summary_generator.py`:\n\n1. **TrainingSummary structure**:\n```markdown\n# Chatter Training Insights\nBased on analysis of {n} real conversations\n\n## Executive Summary\n- Key finding 1\n- Key finding 2\n- Key finding 3\n\n## Subscriber Tiers Overview\n[Table with tier stats]\n\n## Winning Patterns by Tier\n### New Subscribers\n[Playbook summary]\n\n### Low Spenders\n[Playbook summary]\n... etc\n\n## Top Techniques\n1. Teasing - when to use, example scripts\n2. Transactional - when to use, example scripts\n...\n\n## Quick Reference\n[Mood-approach table]\n[Pricing guidelines]\n\n## Script Templates\n[Organized by category]\n\n## What to Avoid\n[Common mistakes]\n```\n\n2. **Functions**:\n- `generate_executive_summary(all_analysis: Dict) -> str`\n- `generate_tier_overview(tier_stats: Dict) -> str`\n- `generate_technique_section(techniques: List) -> str`\n- `compile_training_summary(all_analysis: Dict) -> str`\n\n3. **Output**: `data/insights/training_summary.md`\n\n4. **Formatting**: Clean markdown with tables, bullet points, and clear headers for easy reading",
+        "testStrategy": "Verify training_summary.md is well-formatted markdown. Check all sections are populated. Verify links to playbooks work. Test rendering in markdown preview.",
+        "priority": "medium",
+        "dependencies": [
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "32"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T07:00:05.439Z"
+      },
+      {
+        "id": "35",
+        "title": "Master Analysis Pipeline Script",
+        "description": "Create the run_full_analysis.py master script that orchestrates all analysis phases in sequence with progress tracking and resumability.",
+        "details": "Create `scripts/run_full_analysis.py`:\n\n1. **Pipeline phases**:\n```python\nPHASES = [\n    ('data_loading', 'Load and group conversations'),\n    ('tier_statistics', 'Calculate tier statistics'),\n    ('approach_analysis', 'Analyze approaches by tier'),\n    ('mood_analysis', 'Build mood-approach matrix'),\n    ('message_analysis', 'Analyze message content'),\n    ('keyword_extraction', 'Extract keywords'),\n    ('opener_analysis', 'Analyze openers'),\n    ('closing_analysis', 'Analyze closing patterns'),\n    ('objection_analysis', 'Analyze objection handling'),\n    ('ai_thread_analysis', 'AI analysis of threads'),\n    ('playbook_generation', 'Generate tier playbooks'),\n    ('template_extraction', 'Extract script templates'),\n    ('technique_deepdive', 'Deep dive on techniques'),\n    ('reference_cards', 'Generate quick reference'),\n    ('dashboard_export', 'Export dashboard data'),\n    ('summary_generation', 'Generate training summary'),\n]\n```\n\n2. **CLI interface**:\n```bash\npython scripts/run_full_analysis.py \\\n    --parsed-dir data/parsed_conversations \\\n    --output-dir data/insights \\\n    --model gpt-4o  # or gpt-5.2 for AI phases\n    --skip-ai  # optional: skip AI phases for faster run\n    --phase message_analysis  # optional: run single phase\n    --resume  # resume from last checkpoint\n    --workers 10  # for parallel processing\n```\n\n3. **Features**:\n- Progress bar per phase with rich library\n- Checkpoint after each phase for resumability\n- Phase dependency validation\n- Cost tracking for AI phases\n- Summary report at end\n\n4. **Output**: All files in `data/insights/` as specified in PRD section 4.2",
+        "testStrategy": "Run full pipeline with --skip-ai first. Verify all output files are created. Test --resume by interrupting mid-run. Test single phase execution with --phase.",
+        "priority": "high",
+        "dependencies": [
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "32",
+          "33",
+          "34"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-22T07:00:09.601Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2025-12-22T07:00:09.601Z",
+      "taskCount": 20,
+      "completedCount": 20,
+      "tags": [
+        "master"
+      ]
+    }
+  }
+}

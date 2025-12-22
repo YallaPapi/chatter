@@ -1,0 +1,43 @@
+{
+  "total_files_loaded": 13582,
+  "valid_conversations": 10859,
+  "empty_conversations": 2720,
+  "load_errors": 3,
+  "has_subscriber_stats": 10859,
+  "has_total_spent": 6287,
+  "has_outcome": 10859,
+  "has_context": 10859,
+  "has_messages": 10833,
+  "total_threads": 1295,
+  "single_screenshot_threads": 65,
+  "multi_screenshot_threads": 1230,
+  "max_screenshots_in_thread": 44,
+  "avg_screenshots_per_thread": 8.385328185328186,
+  "tier_distribution": {
+    "new": 113,
+    "low": 822,
+    "medium": 232,
+    "high": 77,
+    "whale": 51
+  },
+  "category_distribution": {
+    "Selling": 3,
+    "Ideas and tactics": 8,
+    "Example conversations": 1284
+  },
+  "chatter_distribution": {
+    "Creating the scenario": 1,
+    "Understanding the value ladder": 1,
+    "Writing PPV descriptions": 1,
+    "Arvin": 200,
+    "Benny": 13,
+    "Billy": 1,
+    "Lau": 205,
+    "Leonel": 107,
+    "Marvin": 151,
+    "Scrp": 1,
+    "Weluu": 200,
+    "Shae papi (Sj)": 20,
+    "Other Chatters": 394
+  }
+}

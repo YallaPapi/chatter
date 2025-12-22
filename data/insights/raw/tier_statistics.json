@@ -1,0 +1,821 @@
+{
+  "tier_statistics": {
+    "new": {
+      "tier": "new",
+      "thread_count": 113,
+      "screenshot_count": 720,
+      "threads_with_sales": 65,
+      "total_sale_amount": 8454.68,
+      "avg_sale_amount": 176.14,
+      "median_sale_amount": 99.5,
+      "min_sale_amount": 3.0,
+      "max_sale_amount": 2569.99,
+      "threads_with_tips": 20,
+      "total_tip_amount": 1976.0,
+      "avg_tip_amount": 123.5,
+      "ppv_sent_count": 96,
+      "avg_total_spent": 0.0,
+      "avg_highest_purchase": 27.53,
+      "approach_distribution": {
+        "playful": 397,
+        "teasing": 133,
+        "transactional": 131,
+        "romantic": 25,
+        "direct": 11,
+        "supportive": 8,
+        "flirty": 4,
+        "empathetic": 3,
+        "none": 1,
+        "caring": 1,
+        "appreciative": 1,
+        "casual": 1
+      },
+      "mood_distribution": {
+        "engaged": 267,
+        "flirty": 247,
+        "eager": 144,
+        "hesitant": 55,
+        "cold": 3,
+        "neutral": 1
+      },
+      "stage_distribution": {
+        "building_rapport": 482,
+        "pitching": 91,
+        "opening": 86,
+        "qualifying": 42,
+        "closing": 13,
+        "flirty": 2,
+        "post_sale": 2,
+        "flirting": 1
+      },
+      "technique_distribution": {
+        "teasing": 26,
+        "transactional": 6,
+        "building rapport": 6,
+        "direct": 4,
+        "gambit": 1,
+        "seamless flow of sexting script": 1,
+        "maximizing sets in the model’s vault and transitioning between scenarios": 1,
+        "using gifs to build trust and enhance conversation": 1,
+        "asking a provocative question": 1,
+        "mass messaging to revive old subscribers": 1,
+        "using notes to remember important details and preferences": 1,
+        "small commitment hook": 1,
+        "revive old conversations": 1,
+        "using knowledge of subscriber's kinks for personalized future sales": 1,
+        "offering a customized video as a verification tool to engage the subscriber": 1
+      }
+    },
+    "low": {
+      "tier": "low",
+      "thread_count": 822,
+      "screenshot_count": 7181,
+      "threads_with_sales": 757,
+      "total_sale_amount": 113266.33,
+      "avg_sale_amount": 154.52,
+      "median_sale_amount": 104.94,
+      "min_sale_amount": 1.0,
+      "max_sale_amount": 2450.0,
+      "threads_with_tips": 305,
+      "total_tip_amount": 34760.87,
+      "avg_tip_amount": 124.59,
+      "ppv_sent_count": 1501,
+      "avg_total_spent": 67.01,
+      "avg_highest_purchase": 51.23,
+      "approach_distribution": {
+        "playful": 4387,
+        "teasing": 1562,
+        "transactional": 921,
+        "romantic": 120,
+        "flirty": 53,
+        "direct": 52,
+        "supportive": 45,
+        "empathetic": 4,
+        "casual": 3,
+        "aggressive": 2,
+        "caring": 2,
+        "apologetic": 2,
+        "dominant": 1,
+        "genuine": 1,
+        "complimentary": 1
+      },
+      "mood_distribution": {
+        "engaged": 2308,
+        "flirty": 2229,
+        "eager": 2181,
+        "hesitant": 409,
+        "cold": 17,
+        "curious": 13,
+        "neutral": 6,
+        "stressed": 1,
+        "positive": 1,
+        "satisfied": 1,
+        "surprised": 1,
+        "confused": 1,
+        "emotional": 1,
+        "unknown": 1,
+        "undefined": 1
+      },
+      "stage_distribution": {
+        "building_rapport": 4259,
+        "pitching": 1585,
+        "opening": 636,
+        "qualifying": 429,
+        "closing": 185,
+        "post_sale": 37,
+        "flirty": 20,
+        "engaging": 10,
+        "teasing": 3,
+        "selling": 2,
+        "build_rapport": 2,
+        "qualifying/pitching": 1,
+        "negotiating": 1,
+        "requesting content": 1
+      },
+      "technique_distribution": {
+        "teasing": 427,
+        "transactional": 107,
+        "direct": 85,
+        "playful": 45,
+        "playful teasing": 24,
+        "building rapport": 22,
+        "direct sale": 19,
+        "direct sales approach": 18,
+        "none": 12,
+        "playful engagement": 9,
+        "pitching": 8,
+        "direct request for engagement": 7,
+        "qualifying": 7,
+        "qualifying and building commonalities": 6,
+        "engaging and teasing": 6
+      }
+    },
+    "medium": {
+      "tier": "medium",
+      "thread_count": 232,
+      "screenshot_count": 2137,
+      "threads_with_sales": 193,
+      "total_sale_amount": 288573.59,
+      "avg_sale_amount": 1576.9,
+      "median_sale_amount": 400.0,
+      "min_sale_amount": 5.0,
+      "max_sale_amount": 200400.0,
+      "threads_with_tips": 144,
+      "total_tip_amount": 64883.45,
+      "avg_tip_amount": 466.79,
+      "ppv_sent_count": 338,
+      "avg_total_spent": 385.17,
+      "avg_highest_purchase": 195.43,
+      "approach_distribution": {
+        "playful": 1342,
+        "teasing": 343,
+        "transactional": 291,
+        "romantic": 63,
+        "supportive": 24,
+        "flirty": 24,
+        "direct": 19,
+        "empathetic": 6,
+        "unknown": 2,
+        "none": 1,
+        "curious": 1,
+        "subtle": 1,
+        "understanding": 1,
+        "engaging": 1,
+        "informative": 1
+      },
+      "mood_distribution": {
+        "engaged": 763,
+        "eager": 651,
+        "flirty": 589,
+        "hesitant": 119,
+        "cold": 6,
+        "unknown": 2,
+        "concerned": 1,
+        "neutral": 1,
+        "playful": 1,
+        "excited": 1
+      },
+      "stage_distribution": {
+        "building_rapport": 1353,
+        "pitching": 401,
+        "opening": 178,
+        "qualifying": 108,
+        "closing": 66,
+        "post_sale": 10,
+        "flirty": 9,
+        "negotiating": 2,
+        "unknown": 2,
+        "engaged": 1,
+        "talking": 1,
+        "engaging": 1,
+        "reconnecting": 1,
+        "renewing": 1
+      },
+      "technique_distribution": {
+        "teasing": 87,
+        "transactional": 32,
+        "direct": 20,
+        "playful": 9,
+        "building rapport": 7,
+        "discount offer": 7,
+        "none": 6,
+        "playful teasing": 6,
+        "playful engagement": 4,
+        "discount offering": 2,
+        "playful flirting": 2,
+        "negotiation": 2,
+        "direct offer": 2,
+        "direct sales approach": 2,
+        "n/a": 2
+      }
+    },
+    "high": {
+      "tier": "high",
+      "thread_count": 77,
+      "screenshot_count": 530,
+      "threads_with_sales": 59,
+      "total_sale_amount": 31952.04,
+      "avg_sale_amount": 591.7,
+      "median_sale_amount": 200.0,
+      "min_sale_amount": 6.0,
+      "max_sale_amount": 3850.0,
+      "threads_with_tips": 60,
+      "total_tip_amount": 42798.58,
+      "avg_tip_amount": 737.91,
+      "ppv_sent_count": 80,
+      "avg_total_spent": 2254.87,
+      "avg_highest_purchase": 333.8,
+      "approach_distribution": {
+        "playful": 326,
+        "transactional": 95,
+        "romantic": 53,
+        "teasing": 40,
+        "supportive": 4,
+        "caring": 2,
+        "direct": 2,
+        "informative": 1,
+        "casual": 1
+      },
+      "mood_distribution": {
+        "engaged": 211,
+        "eager": 155,
+        "flirty": 132,
+        "hesitant": 29,
+        "cold": 1
+      },
+      "stage_distribution": {
+        "building_rapport": 369,
+        "pitching": 80,
+        "opening": 35,
+        "closing": 18,
+        "qualifying": 18,
+        "post_sale": 4,
+        "flirty": 1,
+        "qualifying/pitching/closing": 1
+      },
+      "technique_distribution": {
+        "teasing": 13,
+        "transactional": 9,
+        "direct": 4,
+        "reverse psychology": 2,
+        "asking for tips": 2,
+        "teasing and sexting to build rapport": 1,
+        "discount offer": 1,
+        "sharing content and teasing": 1,
+        "playing a game to engage and build connection": 1,
+        "show genuine care": 1,
+        "rock paper scissors gambit": 1,
+        "food budget gambit": 1,
+        "assurance and rapport building": 1,
+        "dinner gambit": 1,
+        "manipulation through emotional engagement": 1
+      }
+    },
+    "whale": {
+      "tier": "whale",
+      "thread_count": 51,
+      "screenshot_count": 291,
+      "threads_with_sales": 23,
+      "total_sale_amount": 8778.44,
+      "avg_sale_amount": 462.02,
+      "median_sale_amount": 200.0,
+      "min_sale_amount": 5.0,
+      "max_sale_amount": 4050.0,
+      "threads_with_tips": 32,
+      "total_tip_amount": 30695.0,
+      "avg_tip_amount": 1136.85,
+      "ppv_sent_count": 24,
+      "avg_total_spent": 10094.71,
+      "avg_highest_purchase": 536.7,
+      "approach_distribution": {
+        "playful": 149,
+        "romantic": 58,
+        "transactional": 40,
+        "teasing": 21,
+        "supportive": 12,
+        "direct": 5,
+        "informal": 1,
+        "genuine": 1,
+        "reassuring": 1,
+        "flirty": 1
+      },
+      "mood_distribution": {
+        "engaged": 130,
+        "eager": 69,
+        "flirty": 63,
+        "hesitant": 24,
+        "upset": 1,
+        "neutral": 1,
+        "caring": 1
+      },
+      "stage_distribution": {
+        "building_rapport": 226,
+        "pitching": 26,
+        "opening": 21,
+        "qualifying": 10,
+        "post_sale": 3,
+        "closing": 2,
+        "teasing": 1,
+        "engaging": 1
+      },
+      "technique_distribution": {
+        "teasing": 6,
+        "transactional": 5,
+        "hospital gambit": 1,
+        "offering a bundle to a returning subscriber": 1,
+        "scripted engagement with emotional appeal": 1,
+        "promotion of personal content with urgency": 1,
+        "asking for payment upfront for explicit content": 1,
+        "building relationship and leveraging custom content for resale": 1,
+        "direct sales approach": 1,
+        "preparing for a punchline before dropping a ppv": 1,
+        "exclusive content offer": 1,
+        "proper build up": 1,
+        "rent gambit": 1,
+        "requesting funds for cravings and allowances": 1,
+        "playful request for increased price": 1
+      }
+    }
+  },
+  "approach_by_tier": {
+    "new": {
+      "playful": {
+        "count": 62,
+        "threads_with_sales": 40,
+        "avg_sale_amount": 153.49,
+        "total_sale_amount": 6139.78
+      },
+      "transactional": {
+        "count": 38,
+        "threads_with_sales": 18,
+        "avg_sale_amount": 89.61,
+        "total_sale_amount": 1612.95
+      },
+      "romantic": {
+        "count": 2,
+        "threads_with_sales": 0,
+        "avg_sale_amount": 0.0,
+        "total_sale_amount": 0.0
+      },
+      "teasing": {
+        "count": 10,
+        "threads_with_sales": 6,
+        "avg_sale_amount": 116.99,
+        "total_sale_amount": 701.95
+      },
+      "casual": {
+        "count": 1,
+        "threads_with_sales": 1,
+        "avg_sale_amount": 0.0,
+        "total_sale_amount": 0.0
+      }
+    },
+    "low": {
+      "teasing": {
+        "count": 133,
+        "threads_with_sales": 129,
+        "avg_sale_amount": 129.99,
+        "total_sale_amount": 16768.79
+      },
+      "transactional": {
+        "count": 101,
+        "threads_with_sales": 89,
+        "avg_sale_amount": 142.03,
+        "total_sale_amount": 12640.65
+      },
+      "playful": {
+        "count": 581,
+        "threads_with_sales": 534,
+        "avg_sale_amount": 156.07,
+        "total_sale_amount": 83343.95
+      },
+      "direct": {
+        "count": 1,
+        "threads_with_sales": 1,
+        "avg_sale_amount": 57.0,
+        "total_sale_amount": 57.0
+      },
+      "supportive": {
+        "count": 2,
+        "threads_with_sales": 2,
+        "avg_sale_amount": 100.0,
+        "total_sale_amount": 199.99
+      },
+      "romantic": {
+        "count": 4,
+        "threads_with_sales": 2,
+        "avg_sale_amount": 127.97,
+        "total_sale_amount": 255.95
+      }
+    },
+    "medium": {
+      "teasing": {
+        "count": 18,
+        "threads_with_sales": 18,
+        "avg_sale_amount": 464.13,
+        "total_sale_amount": 8354.33
+      },
+      "transactional": {
+        "count": 37,
+        "threads_with_sales": 29,
+        "avg_sale_amount": 419.52,
+        "total_sale_amount": 12165.96
+      },
+      "playful": {
+        "count": 170,
+        "threads_with_sales": 141,
+        "avg_sale_amount": 1890.83,
+        "total_sale_amount": 266607.34
+      },
+      "romantic": {
+        "count": 2,
+        "threads_with_sales": 2,
+        "avg_sale_amount": 222.5,
+        "total_sale_amount": 445.0
+      },
+      "supportive": {
+        "count": 3,
+        "threads_with_sales": 1,
+        "avg_sale_amount": 500.0,
+        "total_sale_amount": 500.0
+      },
+      "caring": {
+        "count": 1,
+        "threads_with_sales": 1,
+        "avg_sale_amount": 22.99,
+        "total_sale_amount": 22.99
+      }
+    },
+    "high": {
+      "playful": {
+        "count": 53,
+        "threads_with_sales": 41,
+        "avg_sale_amount": 396.76,
+        "total_sale_amount": 16267.06
+      },
+      "transactional": {
+        "count": 13,
+        "threads_with_sales": 11,
+        "avg_sale_amount": 1131.82,
+        "total_sale_amount": 12450.0
+      },
+      "teasing": {
+        "count": 6,
+        "threads_with_sales": 4,
+        "avg_sale_amount": 693.74,
+        "total_sale_amount": 2774.98
+      },
+      "romantic": {
+        "count": 5,
+        "threads_with_sales": 3,
+        "avg_sale_amount": 153.33,
+        "total_sale_amount": 460.0
+      }
+    },
+    "whale": {
+      "transactional": {
+        "count": 6,
+        "threads_with_sales": 4,
+        "avg_sale_amount": 150.0,
+        "total_sale_amount": 600.0
+      },
+      "playful": {
+        "count": 33,
+        "threads_with_sales": 13,
+        "avg_sale_amount": 500.26,
+        "total_sale_amount": 6503.44
+      },
+      "romantic": {
+        "count": 9,
+        "threads_with_sales": 6,
+        "avg_sale_amount": 279.17,
+        "total_sale_amount": 1675.0
+      },
+      "genuine": {
+        "count": 1,
+        "threads_with_sales": 0,
+        "avg_sale_amount": 0.0,
+        "total_sale_amount": 0.0
+      },
+      "teasing": {
+        "count": 2,
+        "threads_with_sales": 0,
+        "avg_sale_amount": 0.0,
+        "total_sale_amount": 0.0
+      }
+    }
+  },
+  "sale_distributions": {
+    "new": {
+      "bins": [
+        [
+          0,
+          10,
+          6
+        ],
+        [
+          10,
+          25,
+          5
+        ],
+        [
+          25,
+          50,
+          8
+        ],
+        [
+          50,
+          100,
+          5
+        ],
+        [
+          100,
+          200,
+          13
+        ],
+        [
+          200,
+          500,
+          9
+        ],
+        [
+          500,
+          1000,
+          1
+        ],
+        [
+          1000,
+          9999,
+          1
+        ]
+      ],
+      "percentiles": {
+        "25": 25.985,
+        "50": 99.5,
+        "75": 199.9875,
+        "90": 402.193,
+        "95": 513.5455
+      }
+    },
+    "low": {
+      "bins": [
+        [
+          0,
+          10,
+          20
+        ],
+        [
+          10,
+          25,
+          70
+        ],
+        [
+          25,
+          50,
+          99
+        ],
+        [
+          50,
+          100,
+          152
+        ],
+        [
+          100,
+          200,
+          206
+        ],
+        [
+          200,
+          500,
+          158
+        ],
+        [
+          500,
+          1000,
+          25
+        ],
+        [
+          1000,
+          9999,
+          3
+        ]
+      ],
+      "percentiles": {
+        "25": 48.475,
+        "50": 104.93999999999998,
+        "75": 200.0,
+        "90": 341.04800000000006,
+        "95": 459.3
+      }
+    },
+    "medium": {
+      "bins": [
+        [
+          0,
+          10,
+          2
+        ],
+        [
+          10,
+          25,
+          7
+        ],
+        [
+          25,
+          50,
+          8
+        ],
+        [
+          50,
+          100,
+          12
+        ],
+        [
+          100,
+          200,
+          17
+        ],
+        [
+          200,
+          500,
+          72
+        ],
+        [
+          500,
+          1000,
+          49
+        ],
+        [
+          1000,
+          9999,
+          16
+        ]
+      ],
+      "percentiles": {
+        "25": 199.0,
+        "50": 400.0,
+        "75": 590.96,
+        "90": 961.034,
+        "95": 1225.6
+      }
+    },
+    "high": {
+      "bins": [
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          10,
+          25,
+          2
+        ],
+        [
+          25,
+          50,
+          5
+        ],
+        [
+          50,
+          100,
+          9
+        ],
+        [
+          100,
+          200,
+          7
+        ],
+        [
+          200,
+          500,
+          17
+        ],
+        [
+          500,
+          1000,
+          5
+        ],
+        [
+          1000,
+          9999,
+          8
+        ]
+      ],
+      "percentiles": {
+        "25": 65.0,
+        "50": 200.0,
+        "75": 427.25,
+        "90": 2302.495,
+        "95": 3048.4775
+      }
+    },
+    "whale": {
+      "bins": [
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          10,
+          25,
+          0
+        ],
+        [
+          25,
+          50,
+          0
+        ],
+        [
+          50,
+          100,
+          1
+        ],
+        [
+          100,
+          200,
+          2
+        ],
+        [
+          200,
+          500,
+          12
+        ],
+        [
+          500,
+          1000,
+          2
+        ],
+        [
+          1000,
+          9999,
+          1
+        ]
+      ],
+      "percentiles": {
+        "25": 200.0,
+        "50": 200.0,
+        "75": 400.0,
+        "90": 700.0
+      }
+    }
+  },
+  "upselling_patterns": {
+    "new": {
+      "tier": "new",
+      "avg_sale_vs_highest_ratio": 1.5985714285714285,
+      "threads_above_previous_max": 2,
+      "new_high_percentage": 25.0
+    },
+    "low": {
+      "tier": "low",
+      "avg_sale_vs_highest_ratio": 4.7302352012746764,
+      "threads_above_previous_max": 394,
+      "new_high_percentage": 78.17460317460318
+    },
+    "medium": {
+      "tier": "medium",
+      "avg_sale_vs_highest_ratio": 10.76373543190513,
+      "threads_above_previous_max": 86,
+      "new_high_percentage": 68.25396825396825
+    },
+    "high": {
+      "tier": "high",
+      "avg_sale_vs_highest_ratio": 1.4416631236266502,
+      "threads_above_previous_max": 24,
+      "new_high_percentage": 50.0
+    },
+    "whale": {
+      "tier": "whale",
+      "avg_sale_vs_highest_ratio": 1.8107911877394636,
+      "threads_above_previous_max": 5,
+      "new_high_percentage": 27.77777777777778
+    }
+  },
+  "metadata": {
+    "total_threads": 1295,
+    "total_screenshots": 10859,
+    "note": "All data represents successful sales. Selection bias present."
+  }
+}

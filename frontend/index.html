@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatter Copilot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gambit-phase { @apply bg-gray-50 p-3 rounded-lg mb-2; }
+        .phase-title { @apply text-xs font-semibold text-gray-500 uppercase mb-1; }
+        .phase-content { @apply text-gray-800 whitespace-pre-wrap; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
+                Chatter Copilot
+            </h1>
+            <p class="text-gray-400 mt-2">AI-powered recommendations for your conversations</p>
+        </header>
+
+        <!-- Input Section -->
+        <div class="bg-gray-800 rounded-xl p-6 mb-6 shadow-lg">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+                Describe your current situation:
+            </label>
+            <textarea
+                id="situation-input"
+                class="w-full bg-gray-700 text-white rounded-lg p-4 border border-gray-600 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none resize-none"
+                rows="4"
+                placeholder="e.g., He's been subbed for 3 months, spent $200, we've been flirting for 20 mins, he asked what I'm doing tonight..."
+            ></textarea>
+
+            <div class="flex gap-3 mt-4">
+                <button
+                    id="get-recommendation"
+                    class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+                >
+                    Get Recommendations
+                </button>
+                <button
+                    id="clear-btn"
+                    class="bg-gray-700 hover:bg-gray-600 text-white py-3 px-6 rounded-lg transition duration-200"
+                >
+                    Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-gray-800 rounded-xl p-6 mb-6 shadow-lg">
+            <h2 class="text-lg font-semibold mb-4 text-gray-300">Quick Scenarios</h2>
+            <div class="flex flex-wrap gap-2">
+                <button class="quick-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm" data-scenario="broke">
+                    "I'm broke"
+                </button>
+                <button class="quick-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm" data-scenario="silent">
+                    Went silent
+                </button>
+                <button class="quick-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm" data-scenario="wants_free">
+                    Wants free
+                </button>
+                <button class="quick-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm" data-scenario="negotiating">
+                    Negotiating
+                </button>
+                <button class="quick-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm" data-scenario="after_sale">
+                    After a sale
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden">
+            <!-- Assessment -->
+            <div class="bg-gray-800 rounded-xl p-6 mb-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-4 text-pink-400">Assessment</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-gray-400 text-sm">Funnel Stage</span>
+                        <p id="funnel-stage" class="text-lg font-semibold capitalize"></p>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-sm">Subscriber Type</span>
+                        <p id="subscriber-type" class="text-lg font-semibold capitalize"></p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-gray-400 text-sm">Opportunity</span>
+                    <p id="opportunity" class="text-white"></p>
+                </div>
+                <div id="signals-section" class="mt-4">
+                    <span class="text-gray-400 text-sm">Key Signals</span>
+                    <ul id="signals" class="list-disc list-inside text-green-400"></ul>
+                </div>
+                <div id="risks-section" class="mt-4 hidden">
+                    <span class="text-gray-400 text-sm">Risks</span>
+                    <ul id="risks" class="list-disc list-inside text-yellow-400"></ul>
+                </div>
+            </div>
+
+            <!-- Recommended Action -->
+            <div class="bg-gradient-to-r from-pink-900/50 to-purple-900/50 rounded-xl p-6 mb-6 shadow-lg border border-pink-500/30">
+                <h2 class="text-xl font-bold mb-2 text-white">Recommended Action</h2>
+                <p id="recommended-action" class="text-lg text-gray-100"></p>
+            </div>
+
+            <!-- Pricing -->
+            <div class="bg-gray-800 rounded-xl p-6 mb-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-4 text-green-400">Pricing Guidance</h2>
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="bg-green-900/50 rounded-lg p-4 text-center">
+                        <p class="text-3xl font-bold text-green-400">$<span id="first-price"></span></p>
+                        <p class="text-xs text-gray-400">Recommended First</p>
+                    </div>
+                    <div class="text-gray-400">
+                        <p>Range: $<span id="price-range"></span></p>
+                    </div>
+                </div>
+                <p id="pricing-reasoning" class="text-gray-300 text-sm mb-3"></p>
+                <ul id="pricing-tips" class="text-sm text-gray-400 list-disc list-inside"></ul>
+            </div>
+
+            <!-- Gambits -->
+            <div id="gambits-section" class="bg-gray-800 rounded-xl p-6 mb-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-4 text-purple-400">Recommended Gambits</h2>
+                <div id="gambits-list"></div>
+            </div>
+
+            <!-- Handbook Tips -->
+            <div id="tips-section" class="bg-gray-800 rounded-xl p-6 shadow-lg hidden">
+                <h2 class="text-xl font-bold mb-4 text-blue-400">Handbook Tips</h2>
+                <ul id="handbook-tips" class="list-disc list-inside text-gray-300"></ul>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden text-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
+            <p class="mt-4 text-gray-400">Analyzing your situation...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="hidden bg-red-900/50 border border-red-500 rounded-xl p-6 text-center">
+            <p class="text-red-400" id="error-message"></p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        const input = document.getElementById('situation-input');
+        const getRecBtn = document.getElementById('get-recommendation');
+        const clearBtn = document.getElementById('clear-btn');
+        const results = document.getElementById('results');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+
+        // Main recommendation
+        getRecBtn.addEventListener('click', async () => {
+            const situation = input.value.trim();
+            if (!situation) return;
+
+            await fetchRecommendation({ situation });
+        });
+
+        // Quick actions
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const scenario = btn.dataset.scenario;
+                await fetchQuickRecommendation(scenario);
+            });
+        });
+
+        // Clear
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            results.classList.add('hidden');
+            error.classList.add('hidden');
+        });
+
+        async function fetchRecommendation(body) {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/recommend/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('API request failed');
+                const data = await res.json();
+                displayResults(data);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function fetchQuickRecommendation(scenario) {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/recommend/quick`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scenario })
+                });
+                if (!res.ok) throw new Error('API request failed');
+                const data = await res.json();
+                displayResults(data);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        function showLoading() {
+            results.classList.add('hidden');
+            error.classList.add('hidden');
+            loading.classList.remove('hidden');
+        }
+
+        function showError(msg) {
+            loading.classList.add('hidden');
+            results.classList.add('hidden');
+            error.classList.remove('hidden');
+            document.getElementById('error-message').textContent = msg;
+        }
+
+        function displayResults(data) {
+            loading.classList.add('hidden');
+            error.classList.add('hidden');
+            results.classList.remove('hidden');
+
+            // Assessment
+            document.getElementById('funnel-stage').textContent = data.assessment.funnel_stage.replace('_', ' ');
+            document.getElementById('subscriber-type').textContent = data.assessment.subscriber_type.replace('_', ' ');
+            document.getElementById('opportunity').textContent = data.assessment.opportunity;
+
+            // Signals
+            const signalsList = document.getElementById('signals');
+            signalsList.innerHTML = '';
+            data.assessment.key_signals.forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = s;
+                signalsList.appendChild(li);
+            });
+
+            // Risks
+            const risksList = document.getElementById('risks');
+            const risksSection = document.getElementById('risks-section');
+            risksList.innerHTML = '';
+            if (data.assessment.risks.length > 0) {
+                risksSection.classList.remove('hidden');
+                data.assessment.risks.forEach(r => {
+                    const li = document.createElement('li');
+                    li.textContent = r;
+                    risksList.appendChild(li);
+                });
+            } else {
+                risksSection.classList.add('hidden');
+            }
+
+            // Recommended action
+            document.getElementById('recommended-action').textContent = data.recommended_action;
+
+            // Pricing
+            document.getElementById('first-price').textContent = data.pricing_guidance.recommended_first_price;
+            document.getElementById('price-range').textContent = `${data.pricing_guidance.recommended_range[0]} - ${data.pricing_guidance.recommended_range[1]}`;
+            document.getElementById('pricing-reasoning').textContent = data.pricing_guidance.reasoning;
+
+            const tipsList = document.getElementById('pricing-tips');
+            tipsList.innerHTML = '';
+            data.pricing_guidance.tips.slice(0, 3).forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = t;
+                tipsList.appendChild(li);
+            });
+
+            // Gambits
+            const gambitsList = document.getElementById('gambits-list');
+            gambitsList.innerHTML = '';
+
+            if (data.gambits.length === 0) {
+                gambitsList.innerHTML = '<p class="text-gray-400">No specific gambits matched. Try the gambits browser below.</p>';
+            } else {
+                data.gambits.forEach(g => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-gray-700 rounded-lg p-4 mb-4';
+
+                    let phasesHtml = '';
+                    for (const [phase, text] of Object.entries(g.phases)) {
+                        if (text && text.length < 500) {
+                            phasesHtml += `
+                                <div class="gambit-phase">
+                                    <div class="phase-title">${phase.replace('_', ' ')}</div>
+                                    <div class="phase-content text-sm">${text.substring(0, 300)}${text.length > 300 ? '...' : ''}</div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-semibold text-lg">${g.name}</h3>
+                                <span class="text-xs px-2 py-1 bg-purple-900 text-purple-300 rounded">${g.category}</span>
+                            </div>
+                            <span class="text-sm text-gray-400">${(g.relevance_score * 100).toFixed(0)}% match</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-3">${g.reason}</p>
+                        <div class="text-gray-200">${phasesHtml}</div>
+                    `;
+                    gambitsList.appendChild(div);
+                });
+            }
+
+            // Handbook tips
+            const tipsSection = document.getElementById('tips-section');
+            const handbookTips = document.getElementById('handbook-tips');
+            handbookTips.innerHTML = '';
+
+            if (data.handbook_tips && data.handbook_tips.length > 0) {
+                tipsSection.classList.remove('hidden');
+                data.handbook_tips.forEach(t => {
+                    const li = document.createElement('li');
+                    li.textContent = t;
+                    handbookTips.appendChild(li);
+                });
+            } else {
+                tipsSection.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

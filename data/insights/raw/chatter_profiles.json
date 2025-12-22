@@ -1,0 +1,972 @@
+{
+  "Arvin": {
+    "name": "Arvin",
+    "is_active": true,
+    "total_threads": 200,
+    "total_messages_sent": 2082,
+    "total_sales": 42867.010000000046,
+    "sales_per_thread": 214.33505000000022,
+    "sales_per_message": 20.589341978866496,
+    "sale_count": 337,
+    "avg_sale": 127.20181008902091,
+    "tier_distribution": {
+      "new": 10,
+      "high": 29,
+      "low": 92,
+      "medium": 46,
+      "whale": 23
+    },
+    "tier_revenue": {
+      "new": 125.0,
+      "high": 16536.94,
+      "low": 6005.469999999996,
+      "medium": 13649.599999999999,
+      "whale": 6550.0
+    },
+    "approach_distribution": {
+      "transactional": 245,
+      "teasing": 112,
+      "direct": 5,
+      "playful": 536,
+      "romantic": 70,
+      "flirty": 7,
+      "unknown": 1,
+      "empathetic": 1,
+      "apologetic": 1,
+      "supportive": 4,
+      "personalized": 1,
+      "casual": 1
+    },
+    "approach_percentages": {
+      "transactional": 24.898373983739837,
+      "teasing": 11.38211382113821,
+      "direct": 0.5081300813008129,
+      "playful": 54.47154471544715,
+      "romantic": 7.113821138211382,
+      "flirty": 0.7113821138211381,
+      "unknown": 0.10162601626016261,
+      "empathetic": 0.10162601626016261,
+      "apologetic": 0.10162601626016261,
+      "supportive": 0.40650406504065045,
+      "personalized": 0.10162601626016261,
+      "casual": 0.10162601626016261
+    },
+    "mood_distribution": {
+      "engaged": 343,
+      "cold": 3,
+      "hesitant": 97,
+      "eager": 334,
+      "flirty": 215,
+      "unknown": 1,
+      "neutral": 2,
+      "caring": 1,
+      "hopeful": 1
+    },
+    "avg_message_length": 72.53266090297791,
+    "avg_messages_per_thread": 22.49,
+    "talk_listen_ratio": 1.2445545125639736,
+    "primary_tier": "high",
+    "primary_approach": "playful"
+  },
+  "Benny": {
+    "name": "Benny",
+    "is_active": true,
+    "total_threads": 13,
+    "total_messages_sent": 158,
+    "total_sales": 1153.0,
+    "sales_per_thread": 88.6923076923077,
+    "sales_per_message": 7.2974683544303796,
+    "sale_count": 10,
+    "avg_sale": 115.3,
+    "tier_distribution": {
+      "new": 2,
+      "low": 4,
+      "medium": 7
+    },
+    "tier_revenue": {
+      "new": 130.0,
+      "low": 125.0,
+      "medium": 898.0
+    },
+    "approach_distribution": {
+      "transactional": 14,
+      "playful": 30,
+      "teasing": 8
+    },
+    "approach_percentages": {
+      "transactional": 26.923076923076923,
+      "playful": 57.692307692307686,
+      "teasing": 15.384615384615385
+    },
+    "mood_distribution": {
+      "eager": 13,
+      "engaged": 24,
+      "flirty": 13,
+      "hesitant": 2
+    },
+    "avg_message_length": 54.48101265822785,
+    "avg_messages_per_thread": 26.53846153846154,
+    "talk_listen_ratio": 0.9494815795279065,
+    "primary_tier": "medium",
+    "primary_approach": "playful"
+  },
+  "Billy": {
+    "name": "Billy",
+    "is_active": true,
+    "total_threads": 156,
+    "total_messages_sent": 6947,
+    "total_sales": 37005.95000000001,
+    "sales_per_thread": 237.21762820512828,
+    "sales_per_message": 5.326896502087234,
+    "sale_count": 474,
+    "avg_sale": 78.07162447257386,
+    "tier_distribution": {
+      "new": 4,
+      "low": 113,
+      "medium": 26,
+      "whale": 4,
+      "high": 9
+    },
+    "tier_revenue": {
+      "new": 400.0,
+      "low": 20612.9,
+      "medium": 11000.860000000002,
+      "whale": 1198.44,
+      "high": 3793.75
+    },
+    "approach_distribution": {
+      "transactional": 226,
+      "playful": 1631,
+      "teasing": 259,
+      "direct": 32,
+      "dramatic": 1,
+      "romantic": 52,
+      "flirty": 10,
+      "aggressive": 2,
+      "supportive": 14,
+      "subtle": 1,
+      "empathetic": 2,
+      "none": 1,
+      "informal": 1,
+      "caring": 2,
+      "casual": 1
+    },
+    "approach_percentages": {
+      "transactional": 10.11185682326622,
+      "playful": 72.97539149888144,
+      "teasing": 11.588366890380314,
+      "direct": 1.4317673378076063,
+      "dramatic": 0.0447427293064877,
+      "romantic": 2.3266219239373602,
+      "flirty": 0.44742729306487694,
+      "aggressive": 0.0894854586129754,
+      "supportive": 0.6263982102908278,
+      "subtle": 0.0447427293064877,
+      "empathetic": 0.0894854586129754,
+      "none": 0.0447427293064877,
+      "informal": 0.0447427293064877,
+      "caring": 0.0894854586129754,
+      "casual": 0.0447427293064877
+    },
+    "mood_distribution": {
+      "hesitant": 139,
+      "engaged": 865,
+      "eager": 494,
+      "flirty": 714,
+      "curious": 4,
+      "neutral": 3,
+      "cold": 12,
+      "concerned": 1,
+      "upset": 1,
+      "surprised": 1,
+      "confused": 1,
+      "playful": 1
+    },
+    "avg_message_length": 70.69267309630057,
+    "avg_messages_per_thread": 93.43589743589743,
+    "talk_listen_ratio": 1.3102866824081856,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Lau": {
+    "name": "Lau",
+    "is_active": true,
+    "total_threads": 205,
+    "total_messages_sent": 3752,
+    "total_sales": 12900.999999999996,
+    "sales_per_thread": 62.931707317073155,
+    "sales_per_message": 3.4384328358208944,
+    "sale_count": 196,
+    "avg_sale": 65.82142857142856,
+    "tier_distribution": {
+      "new": 17,
+      "low": 109,
+      "whale": 18,
+      "medium": 41,
+      "high": 20
+    },
+    "tier_revenue": {
+      "new": 118.0,
+      "low": 6629.6799999999985,
+      "whale": 55.0,
+      "medium": 4837.639999999999,
+      "high": 1260.68
+    },
+    "approach_distribution": {
+      "transactional": 159,
+      "playful": 770,
+      "romantic": 45,
+      "teasing": 204,
+      "genuine": 1,
+      "caring": 2,
+      "flirty": 13,
+      "casual": 2,
+      "direct": 8,
+      "appreciative": 1,
+      "apologetic": 1,
+      "supportive": 5,
+      "empathetic": 2,
+      "reassuring": 1,
+      "unknown": 1
+    },
+    "approach_percentages": {
+      "transactional": 13.086419753086421,
+      "playful": 63.37448559670782,
+      "romantic": 3.7037037037037033,
+      "teasing": 16.790123456790123,
+      "genuine": 0.0823045267489712,
+      "caring": 0.1646090534979424,
+      "flirty": 1.0699588477366255,
+      "casual": 0.1646090534979424,
+      "direct": 0.6584362139917695,
+      "appreciative": 0.0823045267489712,
+      "apologetic": 0.0823045267489712,
+      "supportive": 0.411522633744856,
+      "empathetic": 0.1646090534979424,
+      "reassuring": 0.0823045267489712,
+      "unknown": 0.0823045267489712
+    },
+    "mood_distribution": {
+      "engaged": 468,
+      "hesitant": 49,
+      "eager": 328,
+      "flirty": 368,
+      "curious": 3,
+      "unknown": 1,
+      "neutral": 1
+    },
+    "avg_message_length": 59.27905117270789,
+    "avg_messages_per_thread": 39.5219512195122,
+    "talk_listen_ratio": 1.0093485512014704,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Leonel": {
+    "name": "Leonel",
+    "is_active": true,
+    "total_threads": 107,
+    "total_messages_sent": 3179,
+    "total_sales": 32662.77000000002,
+    "sales_per_thread": 305.25953271028055,
+    "sales_per_message": 10.274542308902177,
+    "sale_count": 422,
+    "avg_sale": 77.39992890995265,
+    "tier_distribution": {
+      "new": 17,
+      "low": 65,
+      "high": 2,
+      "medium": 22,
+      "whale": 1
+    },
+    "tier_revenue": {
+      "new": 3593.99,
+      "low": 15476.24,
+      "high": 695.0,
+      "medium": 12522.539999999999,
+      "whale": 375.0
+    },
+    "approach_distribution": {
+      "direct": 10,
+      "transactional": 113,
+      "teasing": 311,
+      "playful": 691,
+      "unknown": 1,
+      "romantic": 32,
+      "supportive": 23,
+      "informative": 1,
+      "flirty": 7,
+      "open": 1,
+      "undefined": 1
+    },
+    "approach_percentages": {
+      "direct": 0.8396305625524769,
+      "transactional": 9.48782535684299,
+      "teasing": 26.11251049538203,
+      "playful": 58.01847187237615,
+      "unknown": 0.08396305625524769,
+      "romantic": 2.686817800167926,
+      "supportive": 1.9311502938706968,
+      "informative": 0.08396305625524769,
+      "flirty": 0.5877413937867338,
+      "open": 0.08396305625524769,
+      "undefined": 0.08396305625524769
+    },
+    "mood_distribution": {
+      "eager": 357,
+      "engaged": 389,
+      "flirty": 376,
+      "unknown": 1,
+      "hesitant": 66,
+      "cold": 2,
+      "neutral": 1,
+      "undefined": 1
+    },
+    "avg_message_length": 67.6338471217364,
+    "avg_messages_per_thread": 64.0,
+    "talk_listen_ratio": 1.2772777767876768,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Marvin": {
+    "name": "Marvin",
+    "is_active": true,
+    "total_threads": 151,
+    "total_messages_sent": 2895,
+    "total_sales": 28521.850000000137,
+    "sales_per_thread": 188.88642384106052,
+    "sales_per_message": 9.852107081174486,
+    "sale_count": 512,
+    "avg_sale": 55.70673828125027,
+    "tier_distribution": {
+      "new": 18,
+      "medium": 22,
+      "low": 109,
+      "high": 2
+    },
+    "tier_revenue": {
+      "new": 620.98,
+      "medium": 11598.150000000003,
+      "low": 13583.049999999992,
+      "high": 2719.67
+    },
+    "approach_distribution": {
+      "transactional": 194,
+      "playful": 615,
+      "romantic": 22,
+      "teasing": 349,
+      "flirty": 8,
+      "direct": 5,
+      "supportive": 9,
+      "understanding": 1,
+      "empathetic": 3,
+      "appreciative": 1,
+      "engaging": 1
+    },
+    "approach_percentages": {
+      "transactional": 16.05960264900662,
+      "playful": 50.91059602649006,
+      "romantic": 1.8211920529801324,
+      "teasing": 28.89072847682119,
+      "flirty": 0.6622516556291391,
+      "direct": 0.4139072847682119,
+      "supportive": 0.7450331125827815,
+      "understanding": 0.08278145695364239,
+      "empathetic": 0.24834437086092717,
+      "appreciative": 0.08278145695364239,
+      "engaging": 0.08278145695364239
+    },
+    "mood_distribution": {
+      "engaged": 337,
+      "hesitant": 88,
+      "flirty": 334,
+      "eager": 446,
+      "cold": 4,
+      "curious": 2,
+      "emotional": 1,
+      "excited": 1
+    },
+    "avg_message_length": 92.59032815198618,
+    "avg_messages_per_thread": 38.205298013245034,
+    "talk_listen_ratio": 1.65484818926027,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Scrp": {
+    "name": "Scrp",
+    "is_active": true,
+    "total_threads": 47,
+    "total_messages_sent": 530,
+    "total_sales": 9342.629999999997,
+    "sales_per_thread": 198.7793617021276,
+    "sales_per_message": 17.6276037735849,
+    "sale_count": 143,
+    "avg_sale": 65.3330769230769,
+    "tier_distribution": {
+      "new": 2,
+      "low": 37,
+      "medium": 7,
+      "high": 1
+    },
+    "tier_revenue": {
+      "new": 19.99,
+      "low": 4012.7099999999996,
+      "medium": 3079.93,
+      "high": 2230.0
+    },
+    "approach_distribution": {
+      "transactional": 52,
+      "playful": 137,
+      "teasing": 64,
+      "direct": 3,
+      "casual": 1,
+      "romantic": 5,
+      "flirty": 2
+    },
+    "approach_percentages": {
+      "transactional": 19.696969696969695,
+      "playful": 51.89393939393939,
+      "teasing": 24.242424242424242,
+      "direct": 1.1363636363636365,
+      "casual": 0.3787878787878788,
+      "romantic": 1.893939393939394,
+      "flirty": 0.7575757575757576
+    },
+    "mood_distribution": {
+      "eager": 122,
+      "engaged": 68,
+      "hesitant": 13,
+      "flirty": 61
+    },
+    "avg_message_length": 80.81509433962265,
+    "avg_messages_per_thread": 22.914893617021278,
+    "talk_listen_ratio": 1.155310999622377,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Weluu": {
+    "name": "Weluu",
+    "is_active": true,
+    "total_threads": 200,
+    "total_messages_sent": 3288,
+    "total_sales": 36934.97,
+    "sales_per_thread": 184.67485,
+    "sales_per_message": 11.233263381995133,
+    "sale_count": 588,
+    "avg_sale": 62.81457482993198,
+    "tier_distribution": {
+      "low": 147,
+      "medium": 36,
+      "high": 13,
+      "whale": 3,
+      "new": 1
+    },
+    "tier_revenue": {
+      "low": 22425.97,
+      "medium": 12333.0,
+      "high": 1976.0,
+      "whale": 200.0,
+      "new": 0.0
+    },
+    "approach_distribution": {
+      "playful": 674,
+      "transactional": 209,
+      "direct": 3,
+      "flirty": 5,
+      "teasing": 304,
+      "romantic": 17,
+      "supportive": 11,
+      "empathetic": 1,
+      "dominant": 1,
+      "none": 1,
+      "caring": 1
+    },
+    "approach_percentages": {
+      "playful": 54.930725346373265,
+      "transactional": 17.033414832925835,
+      "direct": 0.24449877750611246,
+      "flirty": 0.40749796251018744,
+      "teasing": 24.775876120619397,
+      "romantic": 1.3854930725346373,
+      "supportive": 0.8964955175224123,
+      "empathetic": 0.08149959250203749,
+      "dominant": 0.08149959250203749,
+      "none": 0.08149959250203749,
+      "caring": 0.08149959250203749
+    },
+    "mood_distribution": {
+      "engaged": 460,
+      "eager": 426,
+      "flirty": 280,
+      "hesitant": 58,
+      "curious": 2,
+      "cold": 1,
+      "stressed": 1
+    },
+    "avg_message_length": 65.24026763990268,
+    "avg_messages_per_thread": 33.24,
+    "talk_listen_ratio": 1.5617537422097967,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Shae papi (Sj)": {
+    "name": "Shae papi (Sj)",
+    "is_active": true,
+    "total_threads": 20,
+    "total_messages_sent": 347,
+    "total_sales": 1227.0,
+    "sales_per_thread": 61.35,
+    "sales_per_message": 3.5360230547550433,
+    "sale_count": 48,
+    "avg_sale": 25.5625,
+    "tier_distribution": {
+      "low": 20
+    },
+    "tier_revenue": {
+      "low": 1227.0
+    },
+    "approach_distribution": {
+      "transactional": 20,
+      "playful": 66,
+      "teasing": 43,
+      "flirty": 4,
+      "direct": 3,
+      "romantic": 4,
+      "supportive": 1,
+      "empathetic": 1
+    },
+    "approach_percentages": {
+      "transactional": 14.084507042253522,
+      "playful": 46.478873239436616,
+      "teasing": 30.28169014084507,
+      "flirty": 2.8169014084507045,
+      "direct": 2.112676056338028,
+      "romantic": 2.8169014084507045,
+      "supportive": 0.7042253521126761,
+      "empathetic": 0.7042253521126761
+    },
+    "mood_distribution": {
+      "engaged": 48,
+      "flirty": 36,
+      "eager": 50,
+      "curious": 1,
+      "hesitant": 7
+    },
+    "avg_message_length": 57.94236311239193,
+    "avg_messages_per_thread": 37.85,
+    "talk_listen_ratio": 1.2343299158941616,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Zaqueo John (NO LONGER UPDATED)": {
+    "name": "Zaqueo John (NO LONGER UPDATED)",
+    "is_active": false,
+    "total_threads": 25,
+    "total_messages_sent": 755,
+    "total_sales": 2331.95,
+    "sales_per_thread": 93.27799999999999,
+    "sales_per_message": 3.0886754966887415,
+    "sale_count": 67,
+    "avg_sale": 34.80522388059701,
+    "tier_distribution": {
+      "low": 23,
+      "new": 2
+    },
+    "tier_revenue": {
+      "low": 2311.95,
+      "new": 20.0
+    },
+    "approach_distribution": {
+      "transactional": 36,
+      "playful": 144,
+      "direct": 3,
+      "supportive": 6,
+      "teasing": 46,
+      "romantic": 6,
+      "flirty": 2
+    },
+    "approach_percentages": {
+      "transactional": 14.814814814814813,
+      "playful": 59.25925925925925,
+      "direct": 1.2345679012345678,
+      "supportive": 2.4691358024691357,
+      "teasing": 18.930041152263374,
+      "romantic": 2.4691358024691357,
+      "flirty": 0.823045267489712
+    },
+    "mood_distribution": {
+      "engaged": 84,
+      "eager": 72,
+      "hesitant": 21,
+      "flirty": 65,
+      "cold": 1
+    },
+    "avg_message_length": 54.41986754966887,
+    "avg_messages_per_thread": 65.76,
+    "talk_listen_ratio": 1.2226454396667163,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Mikko (NO LONGER UPDATED)": {
+    "name": "Mikko (NO LONGER UPDATED)",
+    "is_active": false,
+    "total_threads": 19,
+    "total_messages_sent": 679,
+    "total_sales": 10862.519999999995,
+    "sales_per_thread": 571.7115789473681,
+    "sales_per_message": 15.997820324005884,
+    "sale_count": 102,
+    "avg_sale": 106.495294117647,
+    "tier_distribution": {
+      "low": 14,
+      "medium": 4,
+      "high": 1
+    },
+    "tier_revenue": {
+      "low": 6067.6900000000005,
+      "medium": 2054.83,
+      "high": 2740.0
+    },
+    "approach_distribution": {
+      "transactional": 44,
+      "playful": 223,
+      "teasing": 48,
+      "supportive": 8,
+      "direct": 2,
+      "flirty": 1,
+      "romantic": 7,
+      "informative": 1,
+      "casual": 1,
+      "curious": 1
+    },
+    "approach_percentages": {
+      "transactional": 13.095238095238097,
+      "playful": 66.36904761904762,
+      "teasing": 14.285714285714285,
+      "supportive": 2.380952380952381,
+      "direct": 0.5952380952380952,
+      "flirty": 0.2976190476190476,
+      "romantic": 2.083333333333333,
+      "informative": 0.2976190476190476,
+      "casual": 0.2976190476190476,
+      "curious": 0.2976190476190476
+    },
+    "mood_distribution": {
+      "hesitant": 27,
+      "engaged": 123,
+      "flirty": 116,
+      "eager": 68,
+      "neutral": 1,
+      "curious": 1
+    },
+    "avg_message_length": 66.20618556701031,
+    "avg_messages_per_thread": 73.78947368421052,
+    "talk_listen_ratio": 1.2526541644606681,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "MD (NO LONGER UPDATED)": {
+    "name": "MD (NO LONGER UPDATED)",
+    "is_active": false,
+    "total_threads": 14,
+    "total_messages_sent": 427,
+    "total_sales": 3186.0,
+    "sales_per_thread": 227.57142857142858,
+    "sales_per_message": 7.46135831381733,
+    "sale_count": 12,
+    "avg_sale": 265.5,
+    "tier_distribution": {
+      "new": 9,
+      "medium": 2,
+      "low": 3
+    },
+    "tier_revenue": {
+      "new": 553.0,
+      "medium": 2450.0,
+      "low": 183.0
+    },
+    "approach_distribution": {
+      "playful": 122,
+      "teasing": 30,
+      "transactional": 13,
+      "romantic": 11,
+      "direct": 4,
+      "supportive": 1,
+      "none": 1
+    },
+    "approach_percentages": {
+      "playful": 67.03296703296702,
+      "teasing": 16.483516483516482,
+      "transactional": 7.142857142857142,
+      "romantic": 6.043956043956044,
+      "direct": 2.197802197802198,
+      "supportive": 0.5494505494505495,
+      "none": 0.5494505494505495
+    },
+    "mood_distribution": {
+      "engaged": 51,
+      "flirty": 98,
+      "neutral": 1,
+      "hesitant": 6,
+      "eager": 26
+    },
+    "avg_message_length": 72.84543325526933,
+    "avg_messages_per_thread": 71.35714285714286,
+    "talk_listen_ratio": 0.9711511442755003,
+    "primary_tier": "medium",
+    "primary_approach": "playful"
+  },
+  "John": {
+    "name": "John",
+    "is_active": true,
+    "total_threads": 42,
+    "total_messages_sent": 878,
+    "total_sales": 8179.489999999989,
+    "sales_per_thread": 194.74976190476164,
+    "sales_per_message": 9.316047835990876,
+    "sale_count": 146,
+    "avg_sale": 56.02390410958896,
+    "tier_distribution": {
+      "low": 33,
+      "new": 4,
+      "medium": 5
+    },
+    "tier_revenue": {
+      "low": 6597.62,
+      "new": 115.0,
+      "medium": 1466.8700000000001
+    },
+    "approach_distribution": {
+      "teasing": 65,
+      "playful": 210,
+      "transactional": 38,
+      "romantic": 16,
+      "empathetic": 2,
+      "flirty": 8,
+      "direct": 2
+    },
+    "approach_percentages": {
+      "teasing": 19.06158357771261,
+      "playful": 61.58357771260997,
+      "transactional": 11.143695014662756,
+      "romantic": 4.69208211143695,
+      "empathetic": 0.5865102639296188,
+      "flirty": 2.346041055718475,
+      "direct": 0.5865102639296188
+    },
+    "mood_distribution": {
+      "eager": 144,
+      "engaged": 93,
+      "flirty": 99,
+      "hesitant": 3,
+      "positive": 1,
+      "satisfied": 1
+    },
+    "avg_message_length": 69.69476082004556,
+    "avg_messages_per_thread": 46.666666666666664,
+    "talk_listen_ratio": 1.169952010400933,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Cyril (NO LONGER UPDATED)": {
+    "name": "Cyril (NO LONGER UPDATED)",
+    "is_active": false,
+    "total_threads": 27,
+    "total_messages_sent": 752,
+    "total_sales": 5334.199999999998,
+    "sales_per_thread": 197.5629629629629,
+    "sales_per_message": 7.093351063829784,
+    "sale_count": 77,
+    "avg_sale": 69.27532467532465,
+    "tier_distribution": {
+      "new": 6,
+      "medium": 5,
+      "low": 14,
+      "whale": 2
+    },
+    "tier_revenue": {
+      "new": 899.97,
+      "medium": 1478.4900000000002,
+      "low": 2555.74,
+      "whale": 400.0
+    },
+    "approach_distribution": {
+      "transactional": 41,
+      "romantic": 15,
+      "playful": 127,
+      "empathetic": 1,
+      "caring": 1,
+      "teasing": 45,
+      "supportive": 10,
+      "direct": 1,
+      "flirty": 1
+    },
+    "approach_percentages": {
+      "transactional": 16.94214876033058,
+      "romantic": 6.198347107438017,
+      "playful": 52.47933884297521,
+      "empathetic": 0.4132231404958678,
+      "caring": 0.4132231404958678,
+      "teasing": 18.59504132231405,
+      "supportive": 4.132231404958678,
+      "direct": 0.4132231404958678,
+      "flirty": 0.4132231404958678
+    },
+    "mood_distribution": {
+      "hesitant": 25,
+      "engaged": 68,
+      "eager": 79,
+      "flirty": 68,
+      "cold": 2
+    },
+    "avg_message_length": 82.52792553191489,
+    "avg_messages_per_thread": 56.77777777777778,
+    "talk_listen_ratio": 1.48191217555338,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Coco": {
+    "name": "Coco",
+    "is_active": true,
+    "total_threads": 3,
+    "total_messages_sent": 56,
+    "total_sales": 14.0,
+    "sales_per_thread": 4.666666666666667,
+    "sales_per_message": 0.25,
+    "sale_count": 2,
+    "avg_sale": 7.0,
+    "tier_distribution": {
+      "new": 1,
+      "low": 2
+    },
+    "tier_revenue": {
+      "new": 5.0,
+      "low": 9.0
+    },
+    "approach_distribution": {
+      "playful": 27,
+      "genuine": 1,
+      "complimentary": 1,
+      "romantic": 1,
+      "transactional": 1
+    },
+    "approach_percentages": {
+      "playful": 87.09677419354838,
+      "genuine": 3.225806451612903,
+      "complimentary": 3.225806451612903,
+      "romantic": 3.225806451612903,
+      "transactional": 3.225806451612903
+    },
+    "mood_distribution": {
+      "engaged": 17,
+      "flirty": 8,
+      "hesitant": 3,
+      "eager": 3
+    },
+    "avg_message_length": 45.57142857142857,
+    "avg_messages_per_thread": 41.333333333333336,
+    "talk_listen_ratio": 1.1998119417019275,
+    "primary_tier": "low",
+    "primary_approach": "playful"
+  },
+  "Almonia (NO LONGER UPDATED)": {
+    "name": "Almonia (NO LONGER UPDATED)",
+    "is_active": false,
+    "total_threads": 34,
+    "total_messages_sent": 972,
+    "total_sales": 13793.679999999995,
+    "sales_per_thread": 405.6964705882351,
+    "sales_per_message": 14.191028806584356,
+    "sale_count": 127,
+    "avg_sale": 108.61165354330704,
+    "tier_distribution": {
+      "new": 14,
+      "low": 15,
+      "medium": 5
+    },
+    "tier_revenue": {
+      "new": 1205.75,
+      "low": 3473.05,
+      "medium": 9114.879999999997
+    },
+    "approach_distribution": {
+      "transactional": 55,
+      "teasing": 104,
+      "playful": 332,
+      "supportive": 1,
+      "romantic": 14,
+      "reassuring": 1,
+      "flirty": 9,
+      "direct": 4
+    },
+    "approach_percentages": {
+      "transactional": 10.576923076923077,
+      "teasing": 20.0,
+      "playful": 63.84615384615384,
+      "supportive": 0.19230769230769232,
+      "romantic": 2.6923076923076925,
+      "reassuring": 0.19230769230769232,
+      "flirty": 1.7307692307692308,
+      "direct": 0.7692307692307693
+    },
+    "mood_distribution": {
+      "engaged": 143,
+      "eager": 123,
+      "flirty": 231,
+      "hesitant": 22,
+      "cold": 1
+    },
+    "avg_message_length": 58.876543209876544,
+    "avg_messages_per_thread": 64.0,
+    "talk_listen_ratio": 1.2360259179265658,
+    "primary_tier": "medium",
+    "primary_approach": "playful"
+  },
+  "Alby (NO LONGER UPDATED)": {
+    "name": "Alby (NO LONGER UPDATED)",
+    "is_active": false,
+    "total_threads": 27,
+    "total_messages_sent": 1297,
+    "total_sales": 5216.069999999991,
+    "sales_per_thread": 193.18777777777743,
+    "sales_per_message": 4.0216422513492605,
+    "sale_count": 98,
+    "avg_sale": 53.225204081632555,
+    "tier_distribution": {
+      "low": 19,
+      "medium": 4,
+      "new": 4
+    },
+    "tier_revenue": {
+      "low": 2079.2700000000004,
+      "medium": 2488.8,
+      "new": 648.0
+    },
+    "approach_distribution": {
+      "transactional": 15,
+      "direct": 4,
+      "playful": 254,
+      "teasing": 106,
+      "flirty": 5,
+      "romantic": 2
+    },
+    "approach_percentages": {
+      "transactional": 3.8860103626943006,
+      "direct": 1.0362694300518136,
+      "playful": 65.80310880829016,
+      "teasing": 27.461139896373055,
+      "flirty": 1.2953367875647668,
+      "romantic": 0.5181347150259068
+    },
+    "mood_distribution": {
+      "engaged": 95,
+      "eager": 109,
+      "flirty": 174,
+      "hesitant": 8
+    },
+    "avg_message_length": 67.16885119506554,
+    "avg_messages_per_thread": 101.37037037037037,
+    "talk_listen_ratio": 1.290503207074822,
+    "primary_tier": "medium",
+    "primary_approach": "playful"
+  }
+}

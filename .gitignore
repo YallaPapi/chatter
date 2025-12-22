@@ -1,0 +1,49 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS specific
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+venv/
+.venv/
+
+# Generated files
+repomix-output.xml
+nul
+
+# MCP config (may contain API keys)
+.mcp.json
+
+# Large data files - parsed conversations (13K+ files)
+data/parsed_conversations/
+
+# OCR output (large, can be regenerated)
+data/ocr_output/
+
+# Keep insights but not raw screenshots
+Chatter Marines Field Handbook/

@@ -1,0 +1,404 @@
+{
+  "statistical_analysis": {
+    "total_conversations": 10859,
+    "sales": {
+      "total": 3678,
+      "total_amount": 449547.63999999274
+    },
+    "tips": {
+      "total": 1393,
+      "total_amount": 174163.90000000008
+    },
+    "by_stage": {
+      "opening": {
+        "count": 956,
+        "sales": 197,
+        "tips": 57
+      },
+      "pitching": {
+        "count": 2183,
+        "sales": 2000,
+        "tips": 301
+      },
+      "building_rapport": {
+        "count": 6689,
+        "sales": 862,
+        "tips": 831
+      },
+      "qualifying": {
+        "count": 607,
+        "sales": 287,
+        "tips": 107
+      },
+      "closing": {
+        "count": 284,
+        "sales": 258,
+        "tips": 65
+      },
+      "post_sale": {
+        "count": 56,
+        "sales": 45,
+        "tips": 12
+      },
+      "negotiating": {
+        "count": 3,
+        "sales": 1,
+        "tips": 2
+      },
+      "teasing": {
+        "count": 4,
+        "sales": 1,
+        "tips": 0
+      },
+      "flirty": {
+        "count": 32,
+        "sales": 13,
+        "tips": 8
+      },
+      "qualifying/pitching": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "engaging": {
+        "count": 12,
+        "sales": 6,
+        "tips": 3
+      },
+      "selling": {
+        "count": 2,
+        "sales": 2,
+        "tips": 0
+      },
+      "engaged": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "talking": {
+        "count": 1,
+        "sales": 0,
+        "tips": 1
+      },
+      "reconnecting": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "flirting": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "build_rapport": {
+        "count": 2,
+        "sales": 0,
+        "tips": 0
+      },
+      "requesting content": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "unknown": {
+        "count": 2,
+        "sales": 1,
+        "tips": 0
+      },
+      "renewing": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "qualifying/pitching/closing": {
+        "count": 1,
+        "sales": 1,
+        "tips": 1
+      }
+    },
+    "by_mood": {
+      "engaged": {
+        "count": 3679,
+        "sales": 914,
+        "tips": 473
+      },
+      "eager": {
+        "count": 3200,
+        "sales": 1979,
+        "tips": 582
+      },
+      "flirty": {
+        "count": 3260,
+        "sales": 542,
+        "tips": 270
+      },
+      "cold": {
+        "count": 27,
+        "sales": 14,
+        "tips": 2
+      },
+      "hesitant": {
+        "count": 636,
+        "sales": 216,
+        "tips": 63
+      },
+      "curious": {
+        "count": 13,
+        "sales": 6,
+        "tips": 0
+      },
+      "stressed": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "neutral": {
+        "count": 9,
+        "sales": 1,
+        "tips": 0
+      },
+      "positive": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "satisfied": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "concerned": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "upset": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "surprised": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "confused": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "playful": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "emotional": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "excited": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "unknown": {
+        "count": 3,
+        "sales": 1,
+        "tips": 0
+      },
+      "undefined": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "caring": {
+        "count": 1,
+        "sales": 0,
+        "tips": 1
+      },
+      "hopeful": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      }
+    },
+    "by_approach": {
+      "playful": {
+        "count": 6601,
+        "sales": 1331,
+        "tips": 739
+      },
+      "transactional": {
+        "count": 1478,
+        "sales": 909,
+        "tips": 337
+      },
+      "teasing": {
+        "count": 2099,
+        "sales": 1314,
+        "tips": 215
+      },
+      "direct": {
+        "count": 89,
+        "sales": 32,
+        "tips": 4
+      },
+      "flirty": {
+        "count": 82,
+        "sales": 25,
+        "tips": 10
+      },
+      "romantic": {
+        "count": 319,
+        "sales": 47,
+        "tips": 61
+      },
+      "supportive": {
+        "count": 93,
+        "sales": 4,
+        "tips": 10
+      },
+      "empathetic": {
+        "count": 13,
+        "sales": 1,
+        "tips": 5
+      },
+      "dominant": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "none": {
+        "count": 3,
+        "sales": 0,
+        "tips": 0
+      },
+      "caring": {
+        "count": 6,
+        "sales": 1,
+        "tips": 2
+      },
+      "casual": {
+        "count": 6,
+        "sales": 2,
+        "tips": 0
+      },
+      "informative": {
+        "count": 2,
+        "sales": 1,
+        "tips": 0
+      },
+      "curious": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "complimentary": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "genuine": {
+        "count": 2,
+        "sales": 0,
+        "tips": 1
+      },
+      "dramatic": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "aggressive": {
+        "count": 2,
+        "sales": 0,
+        "tips": 0
+      },
+      "subtle": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "informal": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "reassuring": {
+        "count": 2,
+        "sales": 0,
+        "tips": 0
+      },
+      "understanding": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "appreciative": {
+        "count": 2,
+        "sales": 1,
+        "tips": 1
+      },
+      "engaging": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "unknown": {
+        "count": 3,
+        "sales": 1,
+        "tips": 0
+      },
+      "open": {
+        "count": 1,
+        "sales": 0,
+        "tips": 0
+      },
+      "undefined": {
+        "count": 1,
+        "sales": 1,
+        "tips": 0
+      },
+      "apologetic": {
+        "count": 2,
+        "sales": 0,
+        "tips": 0
+      },
+      "personalized": {
+        "count": 1,
+        "sales": 1,
+        "tips": 1
+      }
+    },
+    "subscriber_tiers": {
+      "free": 0,
+      "low": 3964,
+      "medium": 1191,
+      "high": 400,
+      "whale": 217
+    },
+    "top_techniques": {
+      "teasing": 559,
+      "transactional": 158,
+      "direct": 113,
+      "playful": 57,
+      "building rapport": 33,
+      "playful teasing": 30,
+      "direct sales approach": 20,
+      "direct sale": 19,
+      "none": 16,
+      "playful engagement": 14,
+      "discount offer": 13,
+      "pitching": 9,
+      "qualifying": 9,
+      "flirty engagement": 8,
+      "direct request for engagement": 7,
+      "negotiation": 7,
+      "playful and teasing": 7,
+      "engaging and teasing": 7,
+      "asking for tips": 6,
+      "qualifying and building commonalities": 6
+    }
+  },
+  "ai_analysis": ""
+}
