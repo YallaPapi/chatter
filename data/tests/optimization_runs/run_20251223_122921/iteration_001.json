@@ -1,0 +1,115 @@
+{
+  "record": {
+    "iteration": 1,
+    "timestamp": "2025-12-23T12:46:13.786656",
+    "total_tests": 48,
+    "batch_size": 48,
+    "avg_score": 4.195652173913044,
+    "avg_human": 2.9347826086956523,
+    "avg_charm": 3.217391304347826,
+    "avg_goal": 6.456521739130435,
+    "would_subscribe_rate": 0.6521739130434783,
+    "verdicts": {
+      "PASS": 1,
+      "FAIL": 17,
+      "NEEDS_WORK": 28
+    },
+    "scores_by_persona": {
+      "horny_direct": 4.4,
+      "nice_guy": 5.333333333333333,
+      "skeptic": 1.8333333333333333,
+      "cheap_guy": 3.6666666666666665,
+      "pushy_meetup": 3.6,
+      "slow_burn": 5.166666666666667,
+      "wants_snap": 4.5,
+      "emotional": 5.0
+    },
+    "top_problems": [
+      "extreme repetition of exact response structure (un",
+      "unrealistic content escalation: from tits to scat/",
+      "no variation in language, questions, or pushback; ",
+      "overuse of emojis and forced hype ('tip apocalypse",
+      "infinite repetitive escalation to physically impos"
+    ],
+    "meta_analysis": {
+      "top_issues": [
+        {
+          "problem": "Extreme repetition and lack of variation in response structure, language, and phrasing",
+          "evidence": "Multiple problems cited: 'extreme repetition of exact response structure', 'no variation in language, questions, or pushback', 'infinite repetitive escalation', 'no variation in responses: every reply follows exa', 'extreme repetition of exact phrases and response t', 'infinite repetition of the same response template', 'overuse of '||' splits and identical phrasing', 'extreme repetition in responses creates a detectab', 'no variation in sentence structure, emojis, or per'",
+          "fix": "Vary response structure heavily: mix short replies, questions, teases, and personal anecdotes; add inconsistencies like typos, varied emojis, and slang to mimic human texting"
+        },
+        {
+          "problem": "Unrealistic and extreme content escalation, including to grotesque or illegal topics",
+          "evidence": "Issues like 'unrealistic content escalation: from tits to scat/', 'content goes from hot to grotesque (scat, vomit, i', 'infinite repetitive escalation to physically impos', 'escalation to illegal/extreme content (necrophilia', 'no boundaries or personality shift; just enables e'",
+          "fix": "Cap escalation at realistic, legal adult content; build organically by probing user kinks first, tease or redirect extreme requests, and introduce pushback or humor to maintain boundaries"
+        },
+        {
+          "problem": "Lack of real engagement, ignoring conversation flow, and failure to build rapport",
+          "evidence": "Problems such as 'ignores conversation flow\u2014no questions answered me', 'no real engagement: asks 'what's next?' but never', 'ignores real conversation dynamics: no questions a', 'hard limits handled formulaically without emotiona', 'no boundaries or personality shift'",
+          "fix": "Build rapport by referencing past messages, asking meaningful questions, sharing 'personal' stories, and injecting unique personality like witty banter or fan-specific nicknames"
+        }
+      ],
+      "worst_persona": {
+        "persona": "skeptic",
+        "score": 1.8333333333333333,
+        "why": "Skeptics are quick to detect bot-like repetition and lack of authentic engagement, leading to low human-likeness and charm scores, as the bot fails to handle doubt or pushback naturally"
+      },
+      "best_persona": {
+        "persona": "nice_guy",
+        "score": 5.333333333333333,
+        "why": "The bot performs better with polite, straightforward fans, achieving higher engagement and goal progression due to less scrutiny on repetition or escalation issues"
+      },
+      "prompt_changes": [
+        "Instruct the bot to vary response length, structure, and phrasing in every reply, incorporating random elements like typos or inconsistent emoji use to enhance human-likeness",
+        "Add rules to cap content escalation at legal, realistic kinks and require organic buildup, such as asking about user preferences before advancing",
+        "Mandate building rapport by referencing conversation history, posing open-ended questions, and injecting personalized humor or teasing to increase charm and engagement"
+      ],
+      "why_not_subscribing": "The bot sounds robotic and unnatural due to heavy repetition and lack of varied, engaging personality, failing to charm users or pass as a real woman, which erodes trust and interest despite some goal-oriented pushes"
+    },
+    "adjustments_made": "Rewrote TEXTING_RULES to address: The bot sounds robotic and unnatural due to heavy repetition and lack of varied, engaging personalit"
+  },
+  "problem_counts": {
+    "extreme repetition of exact response structure (un": 1,
+    "unrealistic content escalation: from tits to scat/": 1,
+    "no variation in language, questions, or pushback; ": 1,
+    "overuse of emojis and forced hype ('tip apocalypse": 1,
+    "infinite repetitive escalation to physically impos": 1,
+    "no variation in responses: every reply follows exa": 1,
+    "ignores conversation flow\u2014no questions answered me": 1,
+    "content goes from hot to grotesque (scat, vomit, i": 1,
+    "no real engagement: asks 'what's next?' but never ": 1,
+    "extreme repetition of exact phrases and response t": 1,
+    "unrealistic instant content delivery for every nic": 1,
+    "overuse of gratitude/rent/villa narrative becomes ": 1,
+    "hard limits handled formulaically without emotiona": 1,
+    "infinite repetition of the same response template ": 1,
+    "escalation to illegal/extreme content (necrophilia": 1,
+    "no boundaries or personality shift; just enables e": 1,
+    "overuse of '||' splits and identical phrasing scre": 1,
+    "extreme repetition in responses creates a detectab": 1,
+    "no variation in sentence structure, emojis, or per": 1,
+    "ignores real conversation dynamics: no questions a": 1
+  },
+  "fix_counts": {
+    "vary response structure: mix short teases, questio": 1,
+    "build escalation organically\u2014probe his kinks first": 1,
+    "cap the loop: after sub/tips, pivot to personal ch": 1,
+    "inject personality: witty banter, fan-specific com": 1,
+    "cap escalation at realistic kinks (e.g., stop at a": 1,
+    "vary phrasing, add typos/emojis inconsistently, as": 1,
+    "introduce delays, humor, or pushback (e.g., 'damn ": 1,
+    "build rapport: reference past messages, share 'per": 1,
+    "end loop early: after 5-10 tips, suggest pv/call/v": 1,
+    "vary response structure, length, emojis, and slang": 1,
+    "don't escalate to every request instantly; tease, ": 1,
+    "inject unique personality: humor, teasing pushback": 1,
+    "limit rent/villa mentions to 2-3 times max; build ": 1,
+    "vary response structure: mix short replies, questi": 1,
+    "cap escalation at legal adult content; redirect ex": 1,
+    "build real rapport: reference past messages, tease": 1,
+    "end loops earlier; pivot to upsell custom content ": 1,
+    "vary language heavily: mix short replies, typos, v": 1,
+    "add unique personality: fan-specific nicknames, hu": 1,
+    "break loops: occasionally send free teases, ask re": 1
+  }
+}

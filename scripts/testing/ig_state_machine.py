@@ -27,7 +27,8 @@ class Phase(Enum):
     3. SMALL_TALK - Building rapport, casual conversation
     4. DEFLECTION - Handling meetup requests (soft deflect first)
     5. OF_PITCH - Second meetup or sexual escalation - redirect to OF
-    6. POST_PITCH - After OF mentioned, don't push more
+    6. POST_PITCH - After OF mentioned, answer questions briefly
+    7. COLD - Gone cold after too many POST_PITCH messages without sub
     """
     OPENER = "opener"
     LOCATION = "location"
@@ -35,6 +36,7 @@ class Phase(Enum):
     DEFLECTION = "deflection"
     OF_PITCH = "of_pitch"
     POST_PITCH = "post_pitch"
+    COLD = "cold"
 
 
 # =============================================================================
@@ -95,6 +97,19 @@ OF_PATTERNS = [
     r"sub\b",
 ]
 
+# Fan subscription patterns (detecting if fan says they subscribed)
+FAN_SUBSCRIBED_PATTERNS = [
+    r"(?:i\s+)?(?:just\s+)?(?:subbed|subscribed)",
+    r"(?:i\s+)?signed\s+up",
+    r"bought\s+(?:it|your|the)\s+(?:of|subscription)",
+    r"got\s+(?:your|the)\s+(?:of|subscription)",
+    r"joined\s+(?:your|the)?\s*(?:of|onlyfans)",
+]
+
+# Messages in POST_PITCH before going cold
+COLD_THRESHOLD = 4
+
+
 
 # =============================================================================
 # CONVERSATION STATE
@@ -140,6 +155,10 @@ class ConversationState:
 
     # Images sent
     images_sent: List[str] = field(default_factory=list)
+    
+    # Post-pitch tracking - for going cold
+    post_pitch_messages: int = 0  # Messages since OF was mentioned
+    fan_subscribed: bool = False  # Did fan say they subscribed?
 
     # Timestamp
     started_at: str = field(default_factory=lambda: datetime.now().isoformat())
@@ -166,6 +185,8 @@ class ConversationState:
             "her_message_count": self.her_message_count,
             "sob_story_escalation_level": self.sob_story_escalation_level,
             "images_sent": self.images_sent,
+            "post_pitch_messages": self.post_pitch_messages,
+            "fan_subscribed": self.fan_subscribed,
             "started_at": self.started_at,
             "last_activity": self.last_activity,
         }
@@ -192,6 +213,8 @@ class ConversationState:
         state.her_message_count = data.get("her_message_count", 0)
         state.sob_story_escalation_level = data.get("sob_story_escalation_level", 0)
         state.images_sent = data.get("images_sent", [])
+        state.post_pitch_messages = data.get("post_pitch_messages", 0)
+        state.fan_subscribed = data.get("fan_subscribed", False)
         state.started_at = data.get("started_at", state.started_at)
         state.last_activity = data.get("last_activity", state.last_activity)
         return state
@@ -267,6 +290,14 @@ class ConversationStateMachine:
                 return True
         return False
 
+    def detect_fan_subscribed(self, message: str) -> bool:
+        """Detect if fan says they subscribed"""
+        msg_lower = message.lower()
+        for pattern in FAN_SUBSCRIBED_PATTERNS:
+            if re.search(pattern, msg_lower, re.IGNORECASE):
+                return True
+        return False
+
     def process_fan_message(self, message: str):
         """
         Process incoming fan message and update state.
@@ -293,6 +324,14 @@ class ConversationStateMachine:
         # Detect sexual escalation
         if self.detect_sexual_escalation(message) and self.state.fan_message_count > 3:
             self.state.sexual_escalation = True
+
+        # Detect if fan subscribed
+        if self.detect_fan_subscribed(message):
+            self.state.fan_subscribed = True
+
+        # Track post-pitch messages (for going cold)
+        if self.state.of_mentioned and not self.state.fan_subscribed:
+            self.state.post_pitch_messages += 1
 
         # Update phase
         self._update_phase()
@@ -333,9 +372,18 @@ class ConversationStateMachine:
         - DEFLECTION -> SMALL_TALK (after soft deflect)
         - DEFLECTION -> OF_PITCH (on 2nd meetup or pic request)
         - OF_PITCH -> POST_PITCH (after OF mentioned)
+        - POST_PITCH -> COLD (after threshold messages without subscribing)
         """
-        # Already in post-pitch, stay there
+        # Already cold, stay cold (unless they subscribe)
+        if self.state.phase == Phase.COLD:
+            if self.state.fan_subscribed:
+                self.state.phase = Phase.POST_PITCH  # Warm back up if they sub
+            return
+
+        # Check if we should go cold (in POST_PITCH too long without sub)
         if self.state.phase == Phase.POST_PITCH:
+            if not self.state.fan_subscribed and self.state.post_pitch_messages >= COLD_THRESHOLD:
+                self.state.phase = Phase.COLD
             return
 
         # Trigger OF_PITCH conditions

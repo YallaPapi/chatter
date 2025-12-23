@@ -24,7 +24,7 @@ from openai import OpenAI
 # Local imports
 from ig_conversation_data import get_random_scenario, Scenario, ALL_SCENARIOS
 from ig_state_machine import ConversationStateMachine, ConversationState, Phase
-from ig_prompt_builder import PromptBuilder, generate_prompt
+from ig_phase_prompts import get_phase_prompt  # NEW: short, phase-specific prompts
 from ig_message_parser import MessageParser, ParsedMessage, enforce_length_limit
 from ig_image_library import (
     get_image_for_trigger,
@@ -48,8 +48,8 @@ class ChatbotConfig:
     api_key: Optional[str] = None
 
     # Generation settings
-    max_tokens: int = 200
-    temperature: float = 0.85
+    max_tokens: int = 100  # Reduced - responses should be SHORT
+    temperature: float = 0.9  # Higher for more variety
 
     # Behavior settings
     sob_story_probability: float = 0.3  # 30% chance of sob story scenario
@@ -97,7 +97,6 @@ class IGChatbot:
 
         # Initialize components
         self.state_machine = ConversationStateMachine()
-        self.prompt_builder = PromptBuilder(self.persona)
         self.message_parser = MessageParser()
 
         # Conversation state
@@ -172,6 +171,14 @@ class IGChatbot:
         # Update state machine
         self.state_machine.process_fan_message(fan_message)
 
+        # COLD phase = silence (no response) unless they subscribed
+        from ig_state_machine import Phase
+        if self.state_machine.state.phase == Phase.COLD and not self.state_machine.state.fan_subscribed:
+            # Silent - left on read
+            self.messages.append(Message(role="her", content="", images=[]))
+            self.state_machine.process_bot_response("", [])
+            return []
+
         # Generate response
         raw_response = self._generate_response(fan_message)
 
@@ -195,27 +202,27 @@ class IGChatbot:
         return parsed_messages
 
     def _generate_response(self, fan_message: str) -> str:
-        """Generate raw response from LLM"""
-        # Get current state context
-        state_context = self.state_machine.get_context_for_prompt()
+        """Generate raw response from LLM using phase-specific prompt"""
+        # Get current phase
+        phase = self.state_machine.state.phase.value
 
-        # Build system prompt
-        system_prompt = self.prompt_builder.build_system_prompt(
-            phase=self.state_machine.state.phase,
-            scenario=self.scenario,
-            state_context=state_context,
-        )
-
-        # Build conversation history
+        # Build conversation history for context
         history = self._format_history_for_llm()
 
-        # Create messages for API
+        # Get the SHORT, FOCUSED prompt for this phase
+        system_prompt = get_phase_prompt(
+            phase=phase,
+            last_message=fan_message,
+            context={"history": history} if history else None
+        )
+
+        # Create messages for API - simpler now
         api_messages = [
             {"role": "system", "content": system_prompt},
         ]
 
-        # Add conversation history
-        for msg in history[-10:]:  # Last 10 messages
+        # Add recent conversation history (just last 4 exchanges)
+        for msg in history[-8:]:
             role = "user" if msg["role"] == "fan" else "assistant"
             api_messages.append({"role": role, "content": msg["content"]})
 
@@ -233,7 +240,6 @@ class IGChatbot:
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"LLM Error: {e}")
-            # Fallback response based on phase
             return self._get_fallback_response()
 
     def _format_history_for_llm(self) -> List[Dict[str, str]]:
@@ -286,6 +292,7 @@ class IGChatbot:
             Phase.DEFLECTION: "haha maybe||i barely know u",
             Phase.OF_PITCH: "lol i dont do that here||check my of tho",
             Phase.POST_PITCH: "its on my of babe",
+            Phase.COLD: "",  # Left on read
         }
 
         return fallbacks.get(phase, "lol")
