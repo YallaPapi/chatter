@@ -393,7 +393,12 @@ def format_examples(examples: List[tuple], num: int = 3) -> str:
     return "\n".join(lines)
 
 
-def get_phase_prompt(phase: str, last_message: str, context: Optional[Dict] = None) -> str:
+def get_phase_prompt(
+    phase: str,
+    last_message: str,
+    context: Optional[Dict] = None,
+    memory_context: Optional[str] = None
+) -> str:
     """
     Get the complete prompt for a phase.
 
@@ -401,6 +406,7 @@ def get_phase_prompt(phase: str, last_message: str, context: Optional[Dict] = No
         phase: Current phase (opener, location, small_talk, etc.)
         last_message: The fan's last message
         context: Optional context (message history, etc.)
+        memory_context: Optional memory context string (anti-repetition, profile, etc.)
 
     Returns:
         Complete prompt string
@@ -413,6 +419,10 @@ def get_phase_prompt(phase: str, last_message: str, context: Optional[Dict] = No
         examples=examples_str,
         last_message=last_message
     )
+
+    # Add memory context (anti-repetition, fan profile, topics)
+    if memory_context:
+        prompt = prompt + "\n\n" + memory_context
 
     # Add conversation history if provided
     if context and context.get("history"):

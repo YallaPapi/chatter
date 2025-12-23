@@ -33,6 +33,12 @@ from ig_image_library import (
     get_sad_reaction,
     get_happy_reaction,
 )
+from ig_memory import (
+    MemoryManager,
+    ConversationMemory,
+    ProfileExtractor,
+    generate_fan_id,
+)
 
 
 # =============================================================================
@@ -91,6 +97,8 @@ class IGChatbot:
         self,
         config: Optional[ChatbotConfig] = None,
         persona: Optional[Dict[str, Any]] = None,
+        memory_manager: Optional[MemoryManager] = None,
+        fan_id: Optional[str] = None,
     ):
         self.config = config or ChatbotConfig()
         self.persona = persona or self._default_persona()
@@ -98,6 +106,12 @@ class IGChatbot:
         # Initialize components
         self.state_machine = ConversationStateMachine()
         self.message_parser = MessageParser()
+
+        # Memory system
+        self.memory_manager = memory_manager or MemoryManager()
+        self.profile_extractor = ProfileExtractor()
+        self.fan_id = fan_id  # Set per-conversation
+        self.memory: Optional[ConversationMemory] = None
 
         # Conversation state
         self.scenario: Optional[Scenario] = None
@@ -128,15 +142,35 @@ class IGChatbot:
             base_url=self.config.api_base,
         )
 
-    def start_conversation(self, scenario: Optional[Scenario] = None) -> None:
+    def start_conversation(
+        self,
+        scenario: Optional[Scenario] = None,
+        fan_id: Optional[str] = None,
+        platform: str = "ig",
+        username: Optional[str] = None,
+    ) -> None:
         """
         Start a new conversation.
 
         Selects a random mood/scenario if not provided.
+        Loads or creates memory for the fan.
         """
         # Reset state
         self.state_machine = ConversationStateMachine()
         self.messages = []
+
+        # Set up fan identity and load memory
+        if fan_id:
+            self.fan_id = fan_id
+        elif username:
+            self.fan_id = generate_fan_id(platform, username)
+        else:
+            # Generate random fan_id for testing
+            import random
+            self.fan_id = generate_fan_id(platform, f"test_{random.randint(1000, 9999)}")
+
+        # Load or create memory
+        self.memory = self.memory_manager.get_or_create_memory(self.fan_id)
 
         # Select scenario
         if scenario:
@@ -165,18 +199,29 @@ class IGChatbot:
         if self.scenario is None:
             self.start_conversation()
 
-        # Record fan message
+        # Ensure memory is loaded
+        if self.memory is None:
+            self.memory = self.memory_manager.get_or_create_memory(self.fan_id)
+
+        # Record fan message in memory
+        phase_name = self.state_machine.state.phase.value
+        self.memory.add_message("fan", fan_message, phase=phase_name)
+
+        # Extract profile info from fan message
+        self.profile_extractor.extract_and_update(fan_message, self.memory)
+
+        # Record fan message in local history
         self.messages.append(Message(role="fan", content=fan_message))
 
         # Update state machine
         self.state_machine.process_fan_message(fan_message)
 
         # COLD phase = silence (no response) unless they subscribed
-        from ig_state_machine import Phase
         if self.state_machine.state.phase == Phase.COLD and not self.state_machine.state.fan_subscribed:
             # Silent - left on read
             self.messages.append(Message(role="her", content="", images=[]))
             self.state_machine.process_bot_response("", [])
+            self.memory_manager.save_memory(self.memory)
             return []
 
         # Generate response
@@ -196,6 +241,18 @@ class IGChatbot:
         images = [m.image for m in parsed_messages if m.has_image()]
         self.messages.append(Message(role="her", content=combined_text, images=images))
 
+        # Update memory with bot response
+        self.memory.add_message("her", combined_text, phase=phase_name)
+        self.memory.add_phrases_from_response(combined_text)
+        self.memory.update_rapport()
+
+        # Track OF mentions
+        if "onlyfans" in combined_text.lower() or "of" in combined_text.lower().split():
+            self.memory.mark_of_mentioned()
+
+        # Save memory
+        self.memory_manager.save_memory(self.memory)
+
         # Update state with our response
         self.state_machine.process_bot_response(combined_text, images)
 
@@ -209,11 +266,17 @@ class IGChatbot:
         # Build conversation history for context
         history = self._format_history_for_llm()
 
+        # Get memory context for anti-repetition and personalization
+        memory_context = None
+        if self.memory:
+            memory_context = self.memory.to_prompt_context()
+
         # Get the SHORT, FOCUSED prompt for this phase
         system_prompt = get_phase_prompt(
             phase=phase,
             last_message=fan_message,
-            context={"history": history} if history else None
+            context={"history": history} if history else None,
+            memory_context=memory_context
         )
 
         # Create messages for API - simpler now

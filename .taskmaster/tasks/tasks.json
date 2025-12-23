@@ -2,665 +2,608 @@
   "master": {
     "tasks": [
       {
-        "id": "16",
-        "title": "Data Loader Module with Conversation Thread Grouping",
-        "description": "Create the data_loader.py module that loads all 13,579+ parsed conversations, groups them by folder (conversation thread), and applies subscriber tier classification.",
-        "details": "Create `scripts/analysis/data_loader.py` with:\n\n1. **ConversationThread dataclass**:\n```python\n@dataclass\nclass ConversationThread:\n    thread_id: str  # folder path as unique ID\n    chatter: str  # extracted from path (e.g., 'Arvin')\n    title: str  # folder name (e.g., '$120 casual chat with a spender')\n    screenshots: List[ParsedScreenshot]  # ordered by filename\n    subscriber_stats: SubscriberStats  # aggregated from first screenshot with data\n    outcome: ThreadOutcome  # aggregated outcome (any sale in thread)\n```\n\n2. **SubscriberTier enum**:\n```python\nclass SubscriberTier(str, Enum):\n    NEW = \"new\"  # $0 or null total_spent\n    LOW = \"low\"  # $1-199\n    MEDIUM = \"medium\"  # $200-999\n    HIGH = \"high\"  # $1000-4999\n    WHALE = \"whale\"  # $5000+\n```\n\n3. **Functions**:\n- `load_all_conversations(parsed_dir: Path) -> List[dict]` - Load all .parsed.json files\n- `group_by_thread(conversations: List[dict]) -> List[ConversationThread]` - Group by folder path\n- `classify_tier(total_spent: Optional[float]) -> SubscriberTier` - Apply tier rules\n- `get_threads_by_tier(threads: List[ConversationThread]) -> Dict[SubscriberTier, List[ConversationThread]]`\n- `generate_data_quality_report(threads: List[ConversationThread]) -> DataQualityReport`\n\n4. **DataQualityReport** includes:\n- Total files loaded, valid conversations, empty conversations\n- Field completeness rates (subscriber_stats, outcome, context)\n- Tier distribution statistics\n- Multi-screenshot thread count vs single-screenshot count",
-        "testStrategy": "Load all 13,579 parsed conversations and verify count. Test tier classification with edge cases ($0, $199, $200, $999, $1000, $4999, $5000). Verify thread grouping produces correct screenshot counts per folder. Generate data quality report and verify all statistics.",
+        "id": "71",
+        "title": "Set up Memory Data Directory and Implement MemoryManager Class",
+        "description": "Create the data/memories directory structure and implement MemoryManager class for JSON file persistence with fan_id indexing.",
+        "details": "Use Python's pathlib (std lib v3.12+) for directory management. Implement get_memory(fan_id: str) -> ConversationMemory | None, save_memory(memory: ConversationMemory), list_all_fans() -> List[str], delete_memory(fan_id: str). Use json module with ensure_ascii=False, indent=2 for readability. Generate fan_id as hashlib.sha256(f'{platform}:{username}'.encode()).hexdigest()[:16]. Create data/memories/index.json mapping fan_id to {'created_at': iso, 'last_active': iso}. Handle directory creation with Path('data/memories').mkdir(parents=True, exist_ok=True). Cap file operations with atomic writes using temporary files: write to .tmp then rename.",
+        "testStrategy": "Unit tests: test_directory_creation(), test_save_load_roundtrip(fan_id), test_list_all_fans_empty_populated(), test_delete_memory_removes_file(). Mock pathlib, assert index.json updates correctly. Test with 1000+ fan_ids for performance (<50ms load/save).",
         "priority": "high",
         "dependencies": [],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:35:09.606Z"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create data/memories Directory Structure",
+            "description": "Set up the memories directory and initialize index.json using pathlib with mkdir(parents=True, exist_ok=True).",
+            "dependencies": [],
+            "details": "Use Path('data/memories').mkdir(parents=True, exist_ok=True); create empty index.json if not exists: Path('data/memories/index.json').write_text('{}', encoding='utf-8'). Handle cross-platform paths with pathlib[1][2].",
+            "status": "pending",
+            "testStrategy": "test_directory_creation(): assert Path('data/memories').exists(), index.json exists and is valid JSON.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement generate_fan_id Function",
+            "description": "Create utility function to generate 16-char SHA256 fan_id from platform:username string.",
+            "dependencies": [],
+            "details": "def generate_fan_id(platform: str, username: str) -> str: import hashlib; return hashlib.sha256(f'{platform}:{username}'.encode()).hexdigest()[:16]. Ensure consistent encoding.",
+            "status": "pending",
+            "testStrategy": "test_generate_fan_id(): assert len(generate_fan_id('ig','user'))==16, hashlib.verify digest integrity.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement get_memory and delete_memory Methods",
+            "description": "Add get_memory(fan_id: str) -> ConversationMemory | None and delete_memory(fan_id: str) to MemoryManager class.",
+            "dependencies": [
+              1
+            ],
+            "details": "get_memory: load JSON from data/memories/{fan_id}.json or return None; delete_memory: Path(f'data/memories/{fan_id}.json').unlink(missing_ok=True), remove from index.json atomically.",
+            "status": "pending",
+            "testStrategy": "test_get_memory_missing_returns_none(), test_delete_memory_removes_file_and_index().",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement save_memory with Atomic Writes",
+            "description": "Implement save_memory(memory: ConversationMemory) using temporary .tmp files then rename for atomicity.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Write memory.to_dict() to {fan_id}.json.tmp with json.dump(..., ensure_ascii=False, indent=2), then .replace({fan_id}.json). Update index.json {'created_at': iso, 'last_active': iso} atomically[1].",
+            "status": "pending",
+            "testStrategy": "test_save_memory_atomic(): simulate crash during write, verify no corruption; test_roundtrip_save_load().",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement list_all_fans and MemoryManager Initialization",
+            "description": "Add list_all_fans() -> List[str] reading index.json and complete MemoryManager __init__.",
+            "dependencies": [
+              1,
+              3,
+              4
+            ],
+            "details": "list_all_fans: load index.json, return sorted(list(fan_ids)); __init__: self.memories_dir = Path('data/memories'), ensure dir exists. Cap performance <50ms for 1000+ fans.",
+            "status": "pending",
+            "testStrategy": "test_list_all_fans_empty_populated(): assert [] on empty, correct list after saves; perf test 1000+ fans.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-23T09:29:56.751Z"
       },
       {
-        "id": "17",
-        "title": "Tier Distribution Statistical Analysis",
-        "description": "Implement statistical analysis of conversation distribution across subscriber tiers, including sale amounts, tip frequency, and spending patterns per tier.",
-        "details": "Create `scripts/analysis/statistical_analysis.py` with:\n\n1. **TierStatistics dataclass**:\n```python\n@dataclass\nclass TierStatistics:\n    tier: SubscriberTier\n    conversation_count: int\n    thread_count: int\n    sale_count: int\n    tip_count: int\n    total_sale_amount: float\n    total_tip_amount: float\n    avg_sale_amount: float\n    median_sale_amount: float\n    min_sale_amount: float\n    max_sale_amount: float\n    avg_highest_purchase: float\n    ppv_sent_count: int\n```\n\n2. **Functions**:\n- `calculate_tier_statistics(threads_by_tier: Dict) -> Dict[SubscriberTier, TierStatistics]`\n- `calculate_sale_distribution(tier_stats: TierStatistics) -> SaleDistribution` (histogram bins)\n- `calculate_upselling_patterns(threads: List) -> UpsellingAnalysis` (sale_amount vs highest_purchase relationship)\n\n3. **Output**: `data/insights/raw/tier_statistics.json` with complete breakdown per tier\n\n4. **Key insight from PRD**: This data has selection bias (100% success), so we're characterizing what success looks like, NOT calculating conversion rates.",
-        "testStrategy": "Run tier statistics on full dataset. Verify all 5 tiers have data. Verify sale amounts sum correctly. Check that avg/median/min/max calculations are accurate by spot-checking against raw data.",
+        "id": "72",
+        "title": "Implement ConversationMemory Dataclass with Core Methods",
+        "description": "Create ConversationMemory dataclass matching exact schema with methods for message/phrase/profile management and serialization.",
+        "details": "Use @dataclass from dataclasses (Python 3.12+) with field validators from pydantic v2.9+. Implement add_message(role: str, content: str, timestamp: str=now_iso(), phase: str=''), add_phrase(phrase: str), update_profile(key: str, value: Any), get_recent_phrases(n: int=10) -> List[str], to_dict() -> dict, from_dict(data: dict) -> Self. Auto-trim messages to 100 oldest first: self.messages = self.messages[-100:], used_phrases[-50:]. Update self.last_active = now_iso() on mutations. Use datetime.fromisoformat/isoformat() for timestamps. Validate fan_profile fields as Optional[str|int|List[str]].",
+        "testStrategy": "Unit tests: test_serialization_roundtrip_full_schema(), test_auto_trim_messages_101(), test_auto_trim_phrases_51(), test_update_profile_nested(), test_get_recent_phrases_empty_full(). Property-based tests with hypothesis for edge cases.",
         "priority": "high",
         "dependencies": [
-          "16"
+          "71"
         ],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:37:40.608Z"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define ConversationMemory dataclass with fields and validators",
+            "description": "Create the @dataclass structure with all required fields including messages, used_phrases, fan_profile, last_active, state, topics_covered using pydantic v2.9+ field validators. Validate fan_profile fields as Optional[str|int|List[str]].",
+            "dependencies": [],
+            "details": "Import dataclasses and pydantic. Define fields with appropriate types and defaults like messages: list[dict] = field(default_factory=list), fan_profile: dict[str, Any] = field(default_factory=dict), etc. Add validator for fan_profile values.",
+            "status": "pending",
+            "testStrategy": "Unit test field initialization and pydantic validation on invalid fan_profile types.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement add_message and add_phrase methods with trimming",
+            "description": "Add add_message(role: str, content: str, timestamp: str=now_iso(), phase: str='') and add_phrase(phrase: str) methods. Implement auto-trimming: messages[-100:], used_phrases[-50:]. Update last_active on both.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use datetime.fromisoformat/isoformat() for timestamps. Append to lists, then trim oldest first with slicing. Call self.last_active = now_iso() in both methods. Define now_iso() helper using datetime.utcnow().isoformat().",
+            "status": "pending",
+            "testStrategy": "test_auto_trim_messages_101() and test_auto_trim_phrases_51(): add 101/51 items and assert len==100/50.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement update_profile and get_recent_phrases methods",
+            "description": "Add update_profile(key: str, value: Any) to set fan_profile[key]=value and get_recent_phrases(n: int=10) -> List[str] returning self.used_phrases[-n:]. Update last_active in update_profile.",
+            "dependencies": [
+              1
+            ],
+            "details": "In update_profile: self.fan_profile[key] = value; self.last_active = now_iso(). get_recent_phrases: return self.used_phrases[-n:] if self.used_phrases else []. Ensure type hints match spec.",
+            "status": "pending",
+            "testStrategy": "test_get_recent_phrases_empty_full(): assert empty list when no phrases, correct slicing when present.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement to_dict and from_dict serialization methods",
+            "description": "Add to_dict() -> dict converting all fields to serializable dict and from_dict(data: dict) -> Self reconstructing instance from dict. Handle datetime strings properly.",
+            "dependencies": [
+              1
+            ],
+            "details": "to_dict: return {f.name: getattr(self, f.name) for f in fields(self)} with custom handling for datetimes if needed. from_dict: use dataclass.replace or manual field assignment. Ensure timestamps parse with fromisoformat.",
+            "status": "pending",
+            "testStrategy": "test_serialization_roundtrip_full_schema(): assert memory == ConversationMemory.from_dict(memory.to_dict()).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add helper functions and final integration validation",
+            "description": "Implement now_iso() helper and validate all methods update last_active correctly. Add any missing fields like state, topics_covered per schema. Run full class validation.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "def now_iso() -> str: return datetime.utcnow().isoformat(). Ensure state: dict = field(default_factory=dict), topics_covered: list[str] = field(default_factory=list). Test mutation methods update last_active.",
+            "status": "pending",
+            "testStrategy": "Property-based tests with hypothesis: random messages/phrases/profiles, verify trimming, serialization, timestamps parse correctly.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-23T09:29:56.835Z"
       },
       {
-        "id": "18",
-        "title": "Approach and Stage Distribution by Tier",
-        "description": "Analyze how creator approaches (playful, teasing, transactional) and conversation stages (opening, pitching, closing) vary across subscriber tiers.",
-        "details": "Add to `scripts/analysis/statistical_analysis.py`:\n\n1. **ApproachByTier analysis**:\n```python\n@dataclass\nclass ApproachDistribution:\n    tier: SubscriberTier\n    approach_counts: Dict[str, int]  # approach -> count\n    approach_with_sale: Dict[str, int]  # approach -> sale count\n    most_common_approach: str\n    most_successful_approach: str  # highest sale count\n```\n\n2. **StageByTier analysis**:\n```python\n@dataclass\nclass StageDistribution:\n    tier: SubscriberTier\n    stage_counts: Dict[str, int]\n    stage_with_sale: Dict[str, int]\n    most_common_stage: str\n```\n\n3. **Functions**:\n- `analyze_approaches_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, ApproachDistribution]`\n- `analyze_stages_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, StageDistribution]`\n- `correlate_approach_to_outcome(threads: List) -> ApproachOutcomeCorrelation`\n\n4. **Output**: `data/insights/raw/approach_distribution.json` and `data/insights/raw/stage_distribution.json`\n\n5. **Key questions to answer**:\n- Do chatters change approach based on subscriber value?\n- Which approaches appear most often in high-value sales?\n- What stage do most successful conversations occur in per tier?",
-        "testStrategy": "Verify approach/stage counts sum to total conversations per tier. Cross-check 'teasing' and 'transactional' approach counts against existing training_insights.json. Verify most_common calculations are correct.",
+        "id": "73",
+        "title": "Integrate MemoryManager into IGChatbot Respond Method",
+        "description": "Wire MemoryManager into IGChatbot.respond() to load memory at start, pass to prompt generation, save after response.",
+        "details": "In IGChatbot.respond(platform: str, username: str, message: str): fan_id = generate_fan_id(platform, username); memory = memory_manager.get_memory(fan_id) or create_new_memory(fan_id); memory.add_message('fan', message, phase=detect_phase(message)); context = memory.to_prompt_context(); response = llm.generate(prompt + context); memory.add_message('her', response); memory_manager.save_memory(memory). Update IGChatbot init to accept MemoryManager instance. Use contextlib for atomic save.",
+        "testStrategy": "Integration tests: test_first_message_creates_memory(), test_subsequent_messages_append(), test_memory_persists_across_restarts(). Mock LLM, assert memory file created/updated correctly.",
         "priority": "high",
         "dependencies": [
-          "16",
-          "17"
+          "71",
+          "72"
         ],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:40:39.289Z"
-      },
-      {
-        "id": "19",
-        "title": "Mood-Approach Correlation Analysis",
-        "description": "Analyze the relationship between subscriber mood and creator approach, identifying which approaches work best for each mood state.",
-        "details": "Add to `scripts/analysis/statistical_analysis.py`:\n\n1. **MoodApproachMatrix**:\n```python\n@dataclass\nclass MoodApproachMatrix:\n    matrix: Dict[str, Dict[str, int]]  # mood -> approach -> count\n    mood_distribution: Dict[str, int]  # mood -> total count\n    approach_for_mood: Dict[str, str]  # mood -> most used approach\n    mood_by_tier: Dict[SubscriberTier, Dict[str, int]]  # tier -> mood distribution\n```\n\n2. **Functions**:\n- `build_mood_approach_matrix(threads: List) -> MoodApproachMatrix`\n- `get_recommended_approach_for_mood(mood: str, matrix: MoodApproachMatrix) -> str`\n- `analyze_technique_by_mood(threads: List) -> Dict[str, Dict[str, int]]` (mood -> technique -> count)\n\n3. **Output**: `data/insights/raw/mood_approach_matrix.json`\n\n4. **Key output for training**: Quick reference card showing mood-to-approach mapping for chatters",
-        "testStrategy": "Verify matrix sums match total conversations. Test with known moods (eager, hesitant, flirty, cold). Verify approach recommendations are logical (e.g., hesitant subscribers shouldn't get transactional approach).",
-        "priority": "medium",
-        "dependencies": [
-          "16"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update IGChatbot __init__ to Accept MemoryManager",
+            "description": "Modify the IGChatbot constructor to receive and store a MemoryManager instance as an attribute for use in respond method.",
+            "dependencies": [],
+            "details": "Add self.memory_manager: MemoryManager parameter to __init__. Store as self.memory_manager = memory_manager. Ensure backward compatibility if needed by making it optional with default None and raise error if used without it.",
+            "status": "pending",
+            "testStrategy": "Unit test: test_init_stores_memory_manager_correctly(), test_init_raises_error_without_memory_manager(). Verify type and reference equality.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Memory Loading and Fan Message Addition in respond()",
+            "description": "Add logic at start of respond() to generate fan_id, load/create memory, add incoming fan message with phase detection.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement: fan_id = generate_fan_id(platform, username); memory = self.memory_manager.get_memory(fan_id) or create_new_memory(fan_id); memory.add_message('fan', message, phase=detect_phase(message)). Handle None case for get_memory.",
+            "status": "pending",
+            "testStrategy": "Unit tests: test_loads_existing_memory(), test_creates_new_memory_first_message(), test_adds_fan_message_with_phase(). Mock MemoryManager and assert calls.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Memory Context into LLM Prompt Generation",
+            "description": "Generate prompt context from memory and pass to LLM.generate() within the respond method.",
+            "dependencies": [
+              2
+            ],
+            "details": "After adding fan message: context = memory.to_prompt_context(); response = self.llm.generate(prompt + context). Ensure prompt variable is accessible or define base prompt template.",
+            "status": "pending",
+            "testStrategy": "Integration test: test_context_passed_to_llm_correctly(). Mock LLM.generate and memory.to_prompt_context, assert prompt contains context.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Add Bot Response to Memory After Generation",
+            "description": "Append the generated bot response to the conversation memory after LLM call.",
+            "dependencies": [
+              3
+            ],
+            "details": "Immediately after response generation: memory.add_message('her', response). Ensure timestamp and other defaults are handled by add_message method.",
+            "status": "pending",
+            "testStrategy": "Unit test: test_bot_response_added_to_memory(). Mock LLM, assert memory.add_message called with 'her' role and response content.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement Atomic Memory Save with Contextlib",
+            "description": "Use contextlib to wrap memory save operation ensuring atomicity, then save memory at end of respond().",
+            "dependencies": [
+              4
+            ],
+            "details": "Use @contextlib.contextmanager for atomic save: with atomic_save(self.memory_manager, memory): self.memory_manager.save_memory(memory). Implement atomic_save using file temp rename or db transaction pattern. Call at end of respond().",
+            "status": "pending",
+            "testStrategy": "Integration tests: test_first_message_creates_memory(), test_subsequent_messages_append(), test_memory_persists_across_restarts(). Mock LLM, assert memory file created/updated atomically.",
+            "parentId": "undefined"
+          }
         ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:40:45.473Z"
+        "updatedAt": "2025-12-23T09:29:56.945Z"
       },
       {
-        "id": "20",
-        "title": "Message Content Analysis - Length and Ratio",
-        "description": "Analyze message-level metrics including average length, message counts, and creator talk-to-listen ratio across tiers.",
-        "details": "Create `scripts/analysis/message_analysis.py`:\n\n1. **MessageMetrics dataclass**:\n```python\n@dataclass\nclass MessageMetrics:\n    avg_creator_message_length: float\n    avg_subscriber_message_length: float\n    avg_message_count_per_thread: float\n    creator_to_subscriber_ratio: float  # talk-to-listen ratio\n    avg_creator_messages_per_thread: float\n    avg_subscriber_messages_per_thread: float\n```\n\n2. **Functions**:\n- `calculate_message_metrics(threads: List) -> MessageMetrics`\n- `calculate_metrics_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, MessageMetrics]`\n- `calculate_metrics_by_outcome(threads: List) -> Dict[str, MessageMetrics]` (sale vs no_sale in screenshot)\n\n3. **Key insights to extract**:\n- Do successful sales have different message length patterns?\n- What is the optimal talk-to-listen ratio?\n- Do whales get longer messages or shorter?\n\n4. **Output**: `data/insights/raw/message_analysis.json`",
-        "testStrategy": "Verify message counts by sampling 10 threads and manually counting. Verify ratio calculations. Check that empty messages (no text) don't skew averages.",
-        "priority": "medium",
-        "dependencies": [
-          "16"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:45:08.073Z"
-      },
-      {
-        "id": "21",
-        "title": "Keyword Extraction from Messages",
-        "description": "Extract most frequent words and phrases from creator and subscriber messages, identifying tier-specific language patterns and keywords correlated with sales.",
-        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **KeywordAnalysis dataclass**:\n```python\n@dataclass\nclass KeywordAnalysis:\n    creator_top_words: List[Tuple[str, int]]  # (word, count)\n    subscriber_top_words: List[Tuple[str, int]]\n    creator_top_phrases: List[Tuple[str, int]]  # 2-3 word phrases\n    subscriber_top_phrases: List[Tuple[str, int]]\n    sale_correlated_keywords: List[Tuple[str, float]]  # (word, correlation_score)\n```\n\n2. **Functions**:\n- `extract_keywords(messages: List[dict], role: str, top_n: int = 100) -> List[Tuple[str, int]]`\n- `extract_phrases(messages: List[dict], role: str, ngram_range: Tuple[int, int] = (2, 3)) -> List[Tuple[str, int]]`\n- `analyze_keywords_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, KeywordAnalysis]`\n- `find_sale_correlated_keywords(threads: List) -> List[Tuple[str, float]]`\n\n3. **Stop words filtering**: Remove common words (the, a, an, is, etc.) and platform-specific noise (PPV, sent, etc.)\n\n4. **Output**: `data/insights/raw/keyword_analysis.json`",
-        "testStrategy": "Verify stop words are filtered. Check keyword counts by searching raw data for top keywords. Verify tier-specific patterns differ (e.g., whales may have different language).",
-        "priority": "medium",
-        "dependencies": [
-          "16",
-          "20"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:45:14.908Z"
-      },
-      {
-        "id": "22",
-        "title": "Opener Analysis - First Message Patterns",
-        "description": "Analyze first creator message patterns to identify successful opening hooks and greeting styles that lead to sales.",
-        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **OpenerAnalysis dataclass**:\n```python\n@dataclass\nclass OpenerAnalysis:\n    total_openers_analyzed: int\n    opener_patterns: List[OpenerPattern]\n    greeting_styles: Dict[str, int]  # style -> count\n    opener_length_distribution: Dict[str, int]  # 'short'/'medium'/'long' -> count\n    openers_with_emoji_count: int\n    personalization_rate: float  # % with names or specific references\n```\n\n2. **OpenerPattern dataclass**:\n```python\n@dataclass\nclass OpenerPattern:\n    pattern_type: str  # 'greeting', 'question', 'compliment', 'teasing', 'direct'\n    example_texts: List[str]  # up to 5 examples\n    count: int\n    sale_rate_in_thread: float  # % of threads with this opener that had a sale\n```\n\n3. **Functions**:\n- `extract_openers(threads: List) -> List[str]` - Get first creator message from each thread\n- `classify_opener(text: str) -> str` - Classify opener type (greeting, question, etc.)\n- `analyze_openers_by_tier(threads_by_tier: Dict) -> Dict[SubscriberTier, OpenerAnalysis]`\n\n4. **Output**: `data/insights/raw/opener_analysis.json`",
-        "testStrategy": "Verify opener count matches thread count. Sample 20 openers and verify classification is correct. Check that opener patterns include diverse examples.",
-        "priority": "medium",
-        "dependencies": [
-          "16"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:45:21.559Z"
-      },
-      {
-        "id": "23",
-        "title": "Closing Language Analysis - Money Request Patterns",
-        "description": "Analyze how creators ask for money, including tip request phrasing, PPV pitch language, and price presentation patterns.",
-        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **ClosingAnalysis dataclass**:\n```python\n@dataclass\nclass ClosingAnalysis:\n    tip_request_patterns: List[Tuple[str, int]]  # (pattern, count)\n    ppv_pitch_patterns: List[Tuple[str, int]]\n    price_mention_patterns: List[Tuple[str, int]]\n    urgency_phrases: List[Tuple[str, int]]  # 'limited time', 'just for you', etc.\n    value_building_phrases: List[Tuple[str, int]]  # 'special', 'exclusive', etc.\n```\n\n2. **Functions**:\n- `extract_closing_messages(threads: List) -> List[str]` - Find messages with $ amounts or tip/PPV keywords\n- `analyze_tip_requests(messages: List[str]) -> List[Tuple[str, int]]` - Extract tip request patterns\n- `analyze_ppv_pitches(messages: List[str]) -> List[Tuple[str, int]]` - Extract PPV pitch patterns\n- `analyze_price_anchoring(threads: List) -> PriceAnchoringAnalysis` - How do chatters present prices?\n\n3. **Regex patterns to detect**:\n- `r'tip\\s*(me|\\$)?\\s*(\\d+)?'` - tip requests\n- `r'\\$\\d+' or 'PPV'` - price mentions\n- `r'just\\s*(for|4)\\s*you'` - personalization\n\n4. **Output**: `data/insights/raw/closing_analysis.json`",
-        "testStrategy": "Verify patterns are extracted from messages containing $ or tip keywords. Sample 10 tip requests and verify pattern matching. Check urgency/value phrases are relevant.",
-        "priority": "medium",
-        "dependencies": [
-          "16",
-          "20"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:45:28.384Z"
-      },
-      {
-        "id": "24",
-        "title": "Objection Handling Analysis",
-        "description": "Identify hesitant subscriber messages and analyze creator responses to objections, including price negotiation patterns.",
-        "details": "Add to `scripts/analysis/message_analysis.py`:\n\n1. **ObjectionAnalysis dataclass**:\n```python\n@dataclass\nclass ObjectionAnalysis:\n    objection_types: Dict[str, int]  # type -> count\n    objection_responses: Dict[str, List[str]]  # type -> example responses\n    negotiation_patterns: List[NegotiationPattern]\n    objection_overcome_rate: float  # % of threads with objection that still had sale\n```\n\n2. **ObjectionType enum**:\n```python\nclass ObjectionType(str, Enum):\n    NO_MONEY = \"no_money\"  # 'broke', 'can't afford'\n    TOO_EXPENSIVE = \"too_expensive\"  # 'too much', 'that's a lot'\n    MAYBE_LATER = \"maybe_later\"  # 'payday', 'later', 'next time'\n    NOT_INTERESTED = \"not_interested\"  # 'not really', 'nah'\n    WANT_FREE = \"want_free\"  # 'send for free', 'preview'\n```\n\n3. **Functions**:\n- `detect_objection_messages(messages: List[dict]) -> List[Tuple[dict, ObjectionType]]`\n- `extract_objection_responses(thread: ConversationThread) -> List[Tuple[ObjectionType, str]]`\n- `analyze_negotiation_patterns(threads: List) -> List[NegotiationPattern]`\n\n4. **Key patterns to extract**:\n- How do chatters respond to 'I'm broke'?\n- What happens when someone says 'too expensive'?\n- Price reduction patterns and their success\n\n5. **Output**: `data/insights/raw/objection_analysis.json`",
-        "testStrategy": "Search for 'broke', 'afford', 'expensive' in subscriber messages and verify detection. Check objection responses are the next creator message. Verify negotiation patterns include price adjustments.",
+        "id": "74",
+        "title": "Implement Used Phrases Tracking and Anti-Repetition Prompt Injection",
+        "description": "Track bot phrases in used_phrases array and inject 'Don't repeat these phrases: [...]' into get_phase_prompt().",
+        "details": "In ConversationMemory.add_phrase(phrase): self.used_phrases.append(phrase.lower().strip()); self.used_phrases = self.used_phrases[-50:]. In IGChatbot: after llm response, memory.add_phrase(extract_phrases(response)) where extract_phrases uses simple split('.')[:3]. Update get_phase_prompt(memory: ConversationMemory) -> str: return base_prompt + f'\\nDONT REPEAT these phrases: {\", \".join(memory.get_recent_phrases(15))}\\n'. Use difflib.SequenceMatcher to detect phrase similarity >0.8 to avoid near-duplicates.",
+        "testStrategy": "Behavioral tests: test_phrase_extraction_accuracy(), test_prompt_injection_contains_phrases(), test_prevents_repetition_in_mock_llm(). A/B test repetition rate before/after (<5% target).",
         "priority": "high",
         "dependencies": [
-          "16",
-          "20"
+          "72",
+          "73"
         ],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:45:34.928Z"
-      },
-      {
-        "id": "25",
-        "title": "Full Conversation Thread Analysis with AI",
-        "description": "Use GPT-5.2 to analyze complete multi-screenshot conversation threads to identify conversation arc patterns and escalation sequences.",
-        "details": "Create `scripts/analysis/ai_pattern_analysis.py`:\n\n1. **ThreadAnalysis dataclass**:\n```python\n@dataclass\nclass ThreadAnalysis:\n    thread_id: str\n    arc_type: str  # 'rapport_to_sale', 'quick_close', 'slow_burn', 'objection_overcome'\n    escalation_steps: List[str]  # ['greeting', 'flirting', 'tease', 'offer', 'close']\n    key_turning_points: List[str]  # messages that shifted the conversation\n    techniques_used: List[str]\n    estimated_sale_probability: float\n```\n\n2. **Functions**:\n- `prepare_thread_for_analysis(thread: ConversationThread) -> str` - Combine all screenshots into single conversation text\n- `analyze_thread_arc(thread_text: str, subscriber_stats: dict) -> ThreadAnalysis` - Call GPT-5.2\n- `batch_analyze_threads(threads: List, batch_size: int = 50) -> List[ThreadAnalysis]`\n- `aggregate_arc_patterns(analyses: List[ThreadAnalysis]) -> ArcPatternSummary`\n\n3. **GPT-5.2 prompt**:\n```\nAnalyze this OnlyFans conversation thread and identify:\n1. Conversation arc type (rapport_to_sale, quick_close, slow_burn, objection_overcome)\n2. Escalation steps taken by the creator\n3. Key turning points that led to the sale\n4. Sales techniques used\n5. What made this conversation successful\n\nSubscriber Profile: {tier}, ${total_spent} lifetime spend\nConversation:\n{thread_text}\n```\n\n4. **Batch processing**: Process in chunks of 50-100 to manage API costs\n5. **Checkpointing**: Save progress for resumability\n\n6. **Output**: `data/insights/raw/conversation_threads.json`",
-        "testStrategy": "Run on 100 multi-screenshot threads. Verify arc types are valid. Spot-check 10 analyses against original conversations. Verify batch processing handles API errors gracefully.",
-        "priority": "high",
-        "dependencies": [
-          "16"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Enhance add_phrase with difflib Similarity Check",
+            "description": "Update ConversationMemory.add_phrase to check new phrase against existing used_phrases using difflib.SequenceMatcher and skip if similarity >0.8.",
+            "dependencies": [],
+            "details": "Import difflib; before append: for existing in self.used_phrases: if difflib.SequenceMatcher(None, phrase.lower().strip(), existing).ratio() > 0.8: return. Then append and trim to [-50:].",
+            "status": "pending",
+            "testStrategy": "Unit test: test_add_phrase_similarity_duplicate_skipped(), test_add_phrase_low_similarity_added(), test_add_phrase_trim_after_50().",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement extract_phrases Function",
+            "description": "Create extract_phrases(response: str) -> List[str] that splits response by '.' and returns first 3 non-empty phrases.",
+            "dependencies": [],
+            "details": "def extract_phrases(response): return [p.strip() for p in response.split('.')[:3] if p.strip()]. Ensure phrases are meaningful sentences, handle edge cases like short responses.",
+            "status": "pending",
+            "testStrategy": "Unit tests: test_extract_phrases_long_text_returns_3(), test_extract_phrases_short_returns_all(), test_extract_phrases_empty_returns_empty().",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Phrase Extraction in IGChatbot",
+            "description": "After LLM response generation in IGChatbot, call memory.add_phrase(extract_phrases(response)) to track bot phrases.",
+            "dependencies": [
+              2
+            ],
+            "details": "In the response handling flow: response = llm.generate(...); memory.add_phrase(extract_phrases(response)); return response. Ensure called only for bot responses.",
+            "status": "pending",
+            "testStrategy": "Integration test: test_igchatbot_phrase_tracking_after_response(), mock LLM and verify add_phrase called with correct phrases.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Update get_phase_prompt with Anti-Repetition Injection",
+            "description": "Modify get_phase_prompt(memory: ConversationMemory) to append 'DONT REPEAT these phrases: [list]' using 15 recent phrases.",
+            "dependencies": [
+              1
+            ],
+            "details": "def get_phase_prompt(memory): base_prompt = ...; recent = memory.get_recent_phrases(15); return base_prompt + f'\\nDONT REPEAT these phrases: {\", \".join(recent)}\\n'. Handle empty list gracefully.",
+            "status": "pending",
+            "testStrategy": "Unit test: test_prompt_injection_contains_recent_phrases(), test_prompt_format_empty_phrases(), test_prompt_escapes_special_chars().",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add Behavioral Tests for Anti-Repetition",
+            "description": "Implement comprehensive tests verifying phrase tracking prevents repetition via mock LLM responses.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create test_phrase_extraction_accuracy(), test_prompt_injection_contains_phrases(), test_prevents_repetition_in_mock_llm(). Target <5% repetition rate in A/B simulation.",
+            "status": "pending",
+            "testStrategy": "Mock LLM that repeats phrases; assert prompts contain anti-repetition instructions and simulated responses avoid tracked phrases >80% cases.",
+            "parentId": "undefined"
+          }
         ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:56:32.885Z"
+        "updatedAt": "2025-12-23T09:29:57.056Z"
       },
       {
-        "id": "26",
-        "title": "Tier-Specific Playbook Extraction - New Subscribers",
-        "description": "Use GPT-5.2 to analyze new subscriber ($0 total_spent) conversations and extract a playbook with openers, pitch timing, and typical first sale amounts.",
-        "details": "Create `scripts/analysis/playbook_generator.py`:\n\n1. **Filter new subscribers**: total_spent == 0 or null\n\n2. **NewSubscriberPlaybook dataclass**:\n```python\n@dataclass\nclass NewSubscriberPlaybook:\n    tier: str = \"new\"\n    sample_size: int\n    effective_openers: List[str]  # Top 10 opener templates\n    pitch_timing: PitchTimingAnalysis  # How quickly do chatters pitch?\n    first_sale_amounts: SaleAmountDistribution\n    typical_first_offer: str  # 'PPV', 'tip request', 'custom'\n    do_list: List[str]  # 5-7 recommended actions\n    dont_list: List[str]  # 5-7 things to avoid\n    script_templates: List[ScriptTemplate]\n```\n\n3. **GPT-5.2 analysis prompt**:\n```\nAnalyze these {n} successful conversations with NEW subscribers (first-time buyers).\nExtract:\n1. What openers work best?\n2. How quickly do successful chatters pitch (message count before first offer)?\n3. What's the typical first sale amount?\n4. Top 5 Do's for new subscribers\n5. Top 5 Don'ts for new subscribers\n6. 3 script templates that worked well\n\nConversation summaries:\n{summaries}\n```\n\n4. **Output**: `data/insights/playbooks/new_subscriber_playbook.md`",
-        "testStrategy": "Verify playbook is generated from new subscriber data only. Check first sale amounts are realistic ($3-10 range). Verify script templates are copy-paste ready.",
-        "priority": "high",
-        "dependencies": [
-          "16",
-          "25"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:56:37.089Z"
-      },
-      {
-        "id": "27",
-        "title": "Tier-Specific Playbook Extraction - Low/Medium Spenders",
-        "description": "Generate playbooks for low ($1-199) and medium ($200-999) spenders focusing on repeat purchase patterns and upselling strategies.",
-        "details": "Add to `scripts/analysis/playbook_generator.py`:\n\n1. **RepeatBuyerPlaybook dataclass**:\n```python\n@dataclass\nclass RepeatBuyerPlaybook:\n    tier: str  # 'low' or 'medium'\n    sample_size: int\n    repeat_purchase_triggers: List[str]  # What brings them back?\n    price_tolerance_analysis: PriceToleranceAnalysis\n    upselling_patterns: List[UpsellingPattern]\n    engagement_maintenance: List[str]  # How to keep them engaged\n    do_list: List[str]\n    dont_list: List[str]\n    script_templates: List[ScriptTemplate]\n```\n\n2. **Key analysis questions**:\n- What builds repeat purchases?\n- How do chatters identify price tolerance?\n- What upselling sequences work?\n\n3. **GPT-5.2 prompt** (separate for low vs medium):\n```\nAnalyze these {n} conversations with {tier} SPENDERS (${range} lifetime spend).\nThese are repeat buyers. Extract:\n1. What triggers repeat purchases?\n2. How do chatters gauge price tolerance?\n3. Successful upselling patterns\n4. How to maintain engagement between sales\n5. Do's and Don'ts for this tier\n6. Script templates for upselling\n\nConversation summaries:\n{summaries}\n```\n\n4. **Output**: \n- `data/insights/playbooks/low_spender_playbook.md`\n- `data/insights/playbooks/medium_spender_playbook.md`",
-        "testStrategy": "Verify low spender playbook focuses on $5-20 price points. Verify medium spender playbook has higher price tolerance. Check upselling patterns are logical sequences.",
-        "priority": "high",
-        "dependencies": [
-          "16",
-          "25"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:56:41.160Z"
-      },
-      {
-        "id": "28",
-        "title": "Tier-Specific Playbook Extraction - High Spenders and Whales",
-        "description": "Generate playbooks for high ($1000-4999) and whale ($5000+) subscribers focusing on relationship maintenance, VIP treatment, and high-ticket sales.",
-        "details": "Add to `scripts/analysis/playbook_generator.py`:\n\n1. **VIPPlaybook dataclass**:\n```python\n@dataclass\nclass VIPPlaybook:\n    tier: str  # 'high' or 'whale'\n    sample_size: int\n    relationship_patterns: List[str]  # How to maintain relationship\n    premium_content_patterns: List[str]  # What premium content do they buy?\n    custom_content_analysis: CustomContentAnalysis\n    vip_treatment_language: List[str]  # Special language for VIPs\n    high_ticket_patterns: List[str]  # Patterns for $100+ sales\n    do_list: List[str]\n    dont_list: List[str]\n    script_templates: List[ScriptTemplate]\n```\n\n2. **Key analysis questions**:\n- What keeps high spenders engaged?\n- What premium content patterns emerge?\n- How do chatters handle custom requests?\n- What language signals VIP treatment?\n\n3. **GPT-5.2 prompt**:\n```\nAnalyze these {n} conversations with {tier} SPENDERS (${range}+ lifetime spend).\nThese are VIP/whale subscribers. Extract:\n1. What keeps them engaged long-term?\n2. Premium content patterns (what do they buy?)\n3. Custom content request handling\n4. VIP treatment language patterns\n5. High-ticket sale patterns ($100+)\n6. Do's and Don'ts for VIPs\n7. Script templates for premium offers\n\nConversation summaries:\n{summaries}\n```\n\n4. **Output**:\n- `data/insights/playbooks/high_spender_playbook.md`\n- `data/insights/playbooks/whale_playbook.md`",
-        "testStrategy": "Verify whale playbook includes language appropriate for high spenders. Check high-ticket patterns reference $50+ amounts. Verify VIP treatment language is distinct from lower tiers.",
-        "priority": "high",
-        "dependencies": [
-          "16",
-          "25"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:56:45.333Z"
-      },
-      {
-        "id": "29",
-        "title": "Script Template Extraction and Formatting",
-        "description": "Extract and templatize copy-paste ready scripts for openers, tip requests, PPV pitches, and objection handlers from successful conversations.",
-        "details": "Create `scripts/analysis/template_extractor.py`:\n\n1. **ScriptTemplate dataclass**:\n```python\n@dataclass\nclass ScriptTemplate:\n    id: str\n    category: str  # 'opener', 'tip_request', 'ppv_pitch', 'objection_handler'\n    template_text: str  # With placeholders like {subscriber_name}, {price}\n    variables: List[str]  # ['subscriber_name', 'price']\n    tier_suitability: List[SubscriberTier]\n    usage_count: int  # How many times similar pattern appeared\n    example_conversations: List[str]  # 3 example usages\n```\n\n2. **Template categories**:\n- **Openers**: greeting templates, personalized openers, re-engagement openers\n- **Tip requests**: casual asks, flirty asks, gratitude-based asks\n- **PPV pitches**: teasing, direct, bundled offers, limited-time\n- **Objection handlers**: for 'broke', 'too expensive', 'maybe later', 'want free'\n\n3. **Functions**:\n- `extract_opener_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `extract_tip_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `extract_ppv_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `extract_objection_templates(threads: List, top_n: int = 20) -> List[ScriptTemplate]`\n- `templatize_message(message: str) -> Tuple[str, List[str]]` - Replace specifics with placeholders\n\n4. **Output**:\n- `data/insights/templates/openers.json`\n- `data/insights/templates/tip_requests.json`\n- `data/insights/templates/ppv_pitches.json`\n- `data/insights/templates/objection_handlers.json`",
-        "testStrategy": "Verify at least 15 templates per category. Check templates have placeholders, not specific names/prices. Verify tier_suitability is set appropriately. Test templatize_message with sample messages.",
-        "priority": "high",
-        "dependencies": [
-          "16",
-          "22",
-          "23",
-          "24"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:56:49.498Z"
-      },
-      {
-        "id": "30",
-        "title": "Technique Deep Dive Analysis",
-        "description": "Analyze top sales techniques (teasing, transactional, playful) in depth using GPT-5.2 to extract specific script patterns and identify when each technique is most appropriate.",
-        "details": "Add to `scripts/analysis/ai_pattern_analysis.py`:\n\n1. **TechniqueAnalysis dataclass**:\n```python\n@dataclass\nclass TechniqueAnalysis:\n    technique_name: str\n    total_occurrences: int\n    sale_success_count: int\n    avg_sale_amount: float\n    best_for_tiers: List[SubscriberTier]\n    best_for_moods: List[str]\n    script_patterns: List[str]  # Specific language patterns\n    when_to_use: List[str]  # Situations where this works\n    when_to_avoid: List[str]  # Situations where this fails\n    example_scripts: List[str]  # 5 real examples\n```\n\n2. **Analyze top 5 techniques from existing data**:\n- teasing (559 occurrences)\n- transactional (158)\n- direct (113)\n- playful (57)\n- playful teasing (30)\n\n3. **GPT-5.2 prompt per technique**:\n```\nAnalyze these {n} conversations using the \"{technique}\" technique.\nExtract:\n1. Specific script patterns that define this technique\n2. When this technique works best (subscriber tier, mood)\n3. When to avoid this technique\n4. 5 copy-paste ready example scripts\n5. How to transition into and out of this technique\n\nConversations:\n{conversations}\n```\n\n4. **Output**: `data/insights/raw/technique_deep_dive.json`",
-        "testStrategy": "Verify all top 5 techniques are analyzed. Check script patterns are specific to each technique. Verify when_to_use/when_to_avoid are actionable. Verify example scripts are real excerpts.",
+        "id": "75",
+        "title": "Build ProfileExtractor with Regex Patterns for Fan Info",
+        "description": "Create ProfileExtractor class to parse fan messages for name/location/job/interests/age using simple regex patterns.",
+        "details": "Use re module (std lib). Patterns: name: r'(?:my name is|call me|i’m|i am)\b\\s*([A-Z][a-z]+)', location: r'(?:from|i live in|in)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)', interests: r'(?:love|like|enjoy|into)\\s+([a-z]+(?:ing|\\s+and\\s+[a-z]+(?:ing)?))', age: r'\\b(\\d{2})\\s*(?:years? old|age)', job: r'(?:work as|i’m|job is|do for work)\\s+([A-Z][a-z]+)'. extract_from_message(msg: str) -> dict[str, Any]. Call in IGChatbot after fan message: updates = extractor.extract(message); memory.update_profile(**updates). Lowercase interests, normalize age to int.",
+        "testStrategy": "Unit tests with 50+ real fan message examples: test_name_extraction_variations(), test_location_cities(), test_interests_phrases(), test_age_formats(). Assert 85%+ extraction accuracy on validation set.",
         "priority": "medium",
         "dependencies": [
-          "16",
-          "25"
+          "72"
         ],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:56:53.648Z"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create ProfileExtractor class with regex patterns",
+            "description": "Define the ProfileExtractor class and initialize it with compiled regex patterns for name, location, job, interests, and age using the re module.",
+            "dependencies": [],
+            "details": "Use re.compile() for each provided pattern: name r'(?:my name is|call me|i’m|i am)\\b\\s*([A-Z][a-z]+)', location r'(?:from|i live in|in)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)', interests r'(?:love|like|enjoy|into)\\s+([a-z]+(?:ing|\\s+and\\s+[a-z]+(?:ing)?))', age r'\\b(\\d{2})\\s*(?:years? old|age)', job r'(?:work as|i’m|job is|do for work)\\s+([A-Z][a-z]+)'. Store as class attributes.",
+            "status": "pending",
+            "testStrategy": "Unit test pattern compilation: assert all patterns are not None and have expected group counts (name/job/location:1, interests:1, age:1).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement extract_from_message method core logic",
+            "description": "Implement the extract_from_message(msg: str) -> dict[str, Any] method to search message with each pattern and capture matches.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use self.name_pattern.search(msg), etc. For each match, extract group(1). Handle None matches by skipping. Return dict with keys 'name', 'location', 'job', 'interests', 'age' containing first match or None.",
+            "status": "pending",
+            "testStrategy": "Test basic extraction with simple phrases like 'My name is Alice' -> {'name': 'Alice'}, verify None for unmatched fields.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add data normalization and processing",
+            "description": "Normalize extracted data: lowercase interests, convert age to int, title case name/location/job if matched.",
+            "dependencies": [
+              2
+            ],
+            "details": "In extract_from_message: if interests: interests.lower(); if age: int(age); name/location/job: .title() or .strip(). Ensure dict values are properly typed before return.",
+            "status": "pending",
+            "testStrategy": "Test normalization: 'LOVE hiking' -> 'love hiking', '25 years old' -> 25, 'alice' -> 'Alice'. Assert types: isinstance(age, int), isinstance(interests, str).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Integrate ProfileExtractor into IGChatbot",
+            "description": "Add ProfileExtractor instance to IGChatbot and call extract_from_message after receiving fan messages.",
+            "dependencies": [
+              3
+            ],
+            "details": "In IGChatbot: self.extractor = ProfileExtractor(); after fan message: updates = self.extractor.extract(message); if updates: self.memory.update_profile(**updates). Handle empty updates gracefully.",
+            "status": "pending",
+            "testStrategy": "Integration test: mock fan message, assert memory.update_profile called with correct kwargs from extraction.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Write comprehensive unit tests for extraction",
+            "description": "Create unit tests covering all patterns with 50+ real fan message variations targeting 85%+ accuracy.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement test_name_extraction_variations(), test_location_cities(), test_interests_phrases(), test_age_formats(). Use real examples like 'I'm from New York', 'Love dancing and singing'. Assert extraction rates and edge cases (no match, multiple potential matches - take first).",
+            "status": "pending",
+            "testStrategy": "Run validation set of 50+ messages, compute accuracy metric >=85%, test edge cases like malformed ages, complex interests phrases.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-23T09:29:57.333Z"
       },
       {
-        "id": "31",
-        "title": "Underperformance Pattern Analysis",
-        "description": "Identify conversations where sale amount is low relative to subscriber tier and analyze potential improvement patterns.",
-        "details": "Add to `scripts/analysis/ai_pattern_analysis.py`:\n\n1. **Define underperformance**:\n- Whale ($5000+ lifetime) with sale < $50\n- High spender ($1000+) with sale < $25\n- Medium spender ($200+) with sale < $15\n\n2. **UnderperformanceAnalysis dataclass**:\n```python\n@dataclass\nclass UnderperformanceAnalysis:\n    tier: SubscriberTier\n    underperforming_count: int\n    total_in_tier: int\n    underperformance_rate: float\n    common_issues: List[str]  # What went wrong?\n    missed_opportunities: List[str]  # What could have been done?\n    improvement_suggestions: List[str]\n```\n\n3. **Functions**:\n- `identify_underperforming_conversations(threads_by_tier: Dict) -> List[ConversationThread]`\n- `analyze_underperformance(threads: List) -> Dict[SubscriberTier, UnderperformanceAnalysis]`\n\n4. **GPT-5.2 prompt**:\n```\nThese conversations are with {tier} subscribers (${range} lifetime spend) but resulted in only ${sale_amount} sales.\nThis may be underperformance. Analyze:\n1. What went wrong in these conversations?\n2. What opportunities were missed?\n3. How could the chatter have done better?\n\nConversations:\n{conversations}\n```\n\n5. **Output**: `data/insights/raw/underperformance_analysis.json`\n\n**Note from PRD**: This is still success-only data, so we're comparing relative success, not true failures.",
-        "testStrategy": "Verify underperformance thresholds are applied correctly. Check that high spenders with small sales are flagged. Verify improvement suggestions are actionable.",
-        "priority": "low",
+        "id": "76",
+        "title": "Implement Fan Profile Personalization Prompt Injection",
+        "description": "Inject structured fan_profile summary and topics_covered into prompts for natural referencing.",
+        "details": "In get_phase_prompt(memory): profile_summary = '; '.join([f'{k}: {v}' for k,v in memory.fan_profile.items() if v]); topics = ', '.join(memory.topics_covered); return base + f'\\nYou know about him: {profile_summary}\\nTopics covered: {topics}\\nReference naturally without forcing.'. Add update_topics_covered(topic: str) to ConversationMemory. After profile update, memory.topics_covered.append(extract_topic(key)) where extract_topic maps 'name':'personal', 'location':'location', etc. Cap topics at 10 unique.",
+        "testStrategy": "Prompt inspection tests: test_profile_injection_format(), test_topics_listed_correctly(). Human eval: bot references profile naturally 70%+ of time when relevant.",
+        "priority": "medium",
         "dependencies": [
-          "16",
-          "17"
+          "73",
+          "75"
         ],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:59:52.732Z"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define extract_topic Mapping Function",
+            "description": "Create a function that maps fan profile keys to standardized topic strings like 'name' to 'personal', 'location' to 'location'.",
+            "dependencies": [],
+            "details": "Implement def extract_topic(key: str) -> str with a dictionary mapping common keys: {'name': 'personal', 'location': 'location', 'favorite_team': 'sports', 'age': 'personal', 'occupation': 'personal'}. Add fallback to key itself if unmapped. Ensure function is pure and testable.",
+            "status": "pending",
+            "testStrategy": "Unit test: test_extract_topic_known_keys(), test_extract_topic_unknown_key_fallback(). Verify 100% coverage of example mappings.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement update_topics_covered Method",
+            "description": "Add update_topics_covered(topic: str) method to ConversationMemory class to append topics while capping at 10 unique entries.",
+            "dependencies": [],
+            "details": "In ConversationMemory: def update_topics_covered(self, topic: str): self.topics_covered.append(topic); self.topics_covered = list(dict.fromkeys(self.topics_covered))[-10:]. Ensure topics_covered is initialized as [] in dataclass. Call self.last_active = now_iso() on update.",
+            "status": "pending",
+            "testStrategy": "Unit tests: test_append_single_topic(), test_maintain_uniqueness(), test_cap_at_10_topics(), test_trims_oldest_first().",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Topic Extraction in Profile Updates",
+            "description": "Modify update_profile method to automatically extract and update topics_covered after profile changes.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "In ConversationMemory.update_profile(key: str, value: Any): super().update_profile(key, value); topic = extract_topic(key); if value: self.update_topics_covered(topic). Only append if value is truthy/non-empty to avoid noise from deletions.",
+            "status": "pending",
+            "testStrategy": "Integration test: test_profile_update_triggers_topic_append(), test_skips_empty_values(), test_topic_capping_with_profile_updates().",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement get_phase_prompt with Profile Injection",
+            "description": "Update get_phase_prompt(memory: ConversationMemory) to inject formatted fan_profile summary and topics_covered.",
+            "dependencies": [
+              2
+            ],
+            "details": "def get_phase_prompt(memory: ConversationMemory, base: str) -> str: profile_summary = '; '.join([f'{k}: {v}' for k,v in memory.fan_profile.items() if v]); topics = ', '.join(memory.topics_covered); return base + f'\\nYou know about him: {profile_summary}\\nTopics covered: {topics}\\nReference naturally without forcing.'",
+            "status": "pending",
+            "testStrategy": "Unit tests: test_profile_injection_format_empty(), test_profile_injection_populated(), test_topics_listed_correctly_empty_full(). String matching assertions.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add Prompt Inspection Test Functions",
+            "description": "Create test_profile_injection_format() and test_topics_listed_correctly() to validate prompt generation.",
+            "dependencies": [
+              4
+            ],
+            "details": "In tests: test_profile_injection_format() mocks memory with sample fan_profile, asserts correct semicolon-separated summary in prompt. test_topics_listed_correctly() tests comma-joined topics with cap. Include edge cases: empty lists, max cap, non-empty values only.",
+            "status": "pending",
+            "testStrategy": "Run full test suite: pytest -v test_prompt_injection.py. Target 100% pass rate. Manual human eval setup for natural referencing (70%+ target).",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-23T09:29:57.650Z"
       },
       {
-        "id": "32",
-        "title": "Quick Reference Card Generator",
-        "description": "Generate quick reference cards for chatters including mood-to-approach mapping, price anchoring guidelines, and tier-specific do's/don'ts.",
-        "details": "Create `scripts/analysis/reference_card_generator.py`:\n\n1. **QuickReferenceCards dataclass**:\n```python\n@dataclass\nclass QuickReferenceCards:\n    mood_to_approach: Dict[str, str]  # mood -> recommended approach\n    approach_scripts: Dict[str, List[str]]  # approach -> quick scripts\n    price_anchoring: Dict[SubscriberTier, PriceGuidelines]\n    tier_dos_donts: Dict[SubscriberTier, DosDonts]\n    objection_responses: Dict[str, List[str]]  # objection -> quick responses\n    emoji_usage: Dict[str, List[str]]  # situation -> recommended emojis\n```\n\n2. **PriceGuidelines dataclass**:\n```python\n@dataclass\nclass PriceGuidelines:\n    tier: SubscriberTier\n    first_sale_range: Tuple[int, int]\n    regular_sale_range: Tuple[int, int]\n    max_recommended: int\n    discount_threshold: int  # When to offer discount\n    price_increase_strategy: str\n```\n\n3. **Functions**:\n- `generate_mood_approach_card(matrix: MoodApproachMatrix) -> Dict[str, str]`\n- `generate_price_guidelines(tier_stats: Dict) -> Dict[SubscriberTier, PriceGuidelines]`\n- `generate_dos_donts(playbooks: List) -> Dict[SubscriberTier, DosDonts]`\n- `compile_quick_reference(all_analysis: Dict) -> QuickReferenceCards`\n\n4. **Output**:\n- `data/insights/playbooks/quick_reference_cards.md` (markdown for printing)\n- `data/insights/playbooks/quick_reference_cards.json` (structured data)",
-        "testStrategy": "Verify all moods have an approach mapped. Check price guidelines match tier definitions. Verify quick reference is concise (printable on 1-2 pages).",
+        "id": "77",
+        "title": "Add State Management and Phase Tracking to Memory",
+        "description": "Implement state.phase, of_mentioned, rapport_level tracking synced with conversation flow.",
+        "details": "Extend ConversationMemory with state: dict per schema. Update phase via simple rules: opener->location after location extracted, etc. Increment rapport_level +=1 after 3+ exchanges, cap 5. Track of_mentioned=True when 'onlyfans' in response.lower(), meetup_requests +=1 on keywords. Update in IGChatbot after each exchange: memory.state['conversation_count'] +=1; memory.state['phase'] = next_phase(memory.state['phase'], message, response). Persist in to_dict().",
+        "testStrategy": "State transition tests: test_phase_progression_sequence(), test_rapport_increment(), test_of_detection_accuracy(). Assert state persists across sessions.",
         "priority": "medium",
         "dependencies": [
-          "19",
-          "26",
-          "27",
-          "28",
-          "29"
+          "72",
+          "73"
         ],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T06:59:56.875Z"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Extend ConversationMemory with State Schema",
+            "description": "Add state dictionary field to ConversationMemory dataclass following the required schema for phase tracking and metrics.",
+            "dependencies": [],
+            "details": "Use Pydantic field validator to ensure state dict contains keys: phase (str), conversation_count (int=0), rapport_level (int=0), of_mentioned (bool=False), meetup_requests (int=0). Initialize in __post_init__ with defaults. Update to_dict() and from_dict() to serialize/deserialize state.",
+            "status": "pending",
+            "testStrategy": "Unit test state schema validation, serialization roundtrip, default initialization.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement next_phase State Transition Function",
+            "description": "Create next_phase(current_phase: str, message: str, response: str) -> str function with simple rules for phase progression.",
+            "dependencies": [],
+            "details": "Define rules: 'opener' -> 'location' after location extracted from message/response; increment rapport_level after 3+ exchanges (check conversation_count); set of_mentioned=True if 'onlyfans' in response.lower(); increment meetup_requests on keywords like 'meet', 'date', 'hangout'. Cap rapport_level at 5.",
+            "status": "pending",
+            "testStrategy": "Test phase transitions with mock message/response sequences, rapport increment logic, keyword detection accuracy.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add State Update Methods to ConversationMemory",
+            "description": "Implement methods to update state.phase, increment conversation_count, rapport_level, track of_mentioned and meetup_requests.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add update_state(phase: str=None, conversation_count_delta: int=1, etc.) method that applies changes atomically. Call from add_message() to increment conversation_count. Ensure auto-trim doesn't affect state dict. Update last_active timestamp on state mutations.",
+            "status": "pending",
+            "testStrategy": "Test state mutations preserve integrity, increments work correctly, capping logic for rapport_level.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Integrate State Updates into IGChatbot Respond Method",
+            "description": "Wire state tracking into IGChatbot.respond(): increment conversation_count, update phase using next_phase(message, response).",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "After LLM response generation: memory.state['conversation_count'] += 1; memory.state['phase'] = next_phase(memory.state['phase'], message, response); memory.update_state_from_phase(memory.state['phase']). Call before memory_manager.save_memory(memory).",
+            "status": "pending",
+            "testStrategy": "Integration test: simulate conversation exchanges, assert state updates correctly after each respond call.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add State Persistence and Session Recovery Tests",
+            "description": "Ensure state persists via to_dict() across sessions and add comprehensive state transition tests.",
+            "dependencies": [
+              1,
+              3,
+              4
+            ],
+            "details": "Verify to_dict() includes full state dict serialization. Implement test_phase_progression_sequence() with multi-turn conversation, test_rapport_increment() for 3+ exchange threshold, test_of_detection_accuracy() with keyword variations. Test state recovery from persisted memory.",
+            "status": "pending",
+            "testStrategy": "End-to-end tests: full conversation flow with persistence, mock IGChatbot restarts, assert state continuity and correct metrics.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-23T09:29:58.000Z"
       },
       {
-        "id": "33",
-        "title": "Dashboard Data Export",
-        "description": "Export all analysis data in a structured format suitable for frontend visualization, including key metrics, trend data, and comparison charts.",
-        "details": "Create `scripts/analysis/dashboard_export.py`:\n\n1. **DashboardData dataclass**:\n```python\n@dataclass\nclass DashboardData:\n    summary_metrics: SummaryMetrics\n    tier_comparison: TierComparisonData\n    approach_effectiveness: ApproachEffectivenessData\n    stage_distribution: StageDistributionData\n    technique_rankings: TechniqueRankingData\n    time_series: Optional[TimeSeriesData]  # If timestamps available\n    word_clouds: Dict[str, List[Tuple[str, int]]]  # category -> word counts\n```\n\n2. **SummaryMetrics**:\n```python\n@dataclass\nclass SummaryMetrics:\n    total_conversations: int\n    total_threads: int\n    total_sale_amount: float\n    total_tip_amount: float\n    avg_sale_amount: float\n    tier_distribution: Dict[str, int]\n    top_technique: str\n    top_approach: str\n```\n\n3. **Chart-ready data structures**:\n- `TierComparisonData`: Bar chart data for sale amounts by tier\n- `ApproachEffectivenessData`: Pie/bar chart for approach distribution\n- `StageDistributionData`: Funnel visualization data\n- `TechniqueRankingData`: Horizontal bar chart data\n\n4. **Functions**:\n- `compile_dashboard_data(all_analysis: Dict) -> DashboardData`\n- `export_for_recharts(data: DashboardData) -> Dict` - Format for React/Recharts\n- `export_for_chartjs(data: DashboardData) -> Dict` - Format for Chart.js\n\n5. **Output**: `data/insights/dashboard_data.json`",
-        "testStrategy": "Verify dashboard_data.json loads without errors. Check all chart data has correct structure for visualization. Verify summary metrics match raw statistics.",
+        "id": "78",
+        "title": "Comprehensive Testing and Success Metrics Validation",
+        "description": "Add automated tests measuring repetition rate, conversation length, human-likeness against success metrics.",
+        "details": "Create test_conversations.py with 20 scripted fan convos (avg 15 turns). Measure: repetition_rate = repeated_phrases/total_phrases <5%, avg_length >15, manual human_likeness_score 1-10. Use pytest with pytest-mock. Test edge cases: fan returns after 30 days (continue memory), 100-message cap, phrase deduping. Add load test: 100 concurrent fans. Profile save/load latency <100ms.",
+        "testStrategy": "Automated metric tests: assert repetition_rate(fan_convo) < 0.05, assert avg_length(all_convos) > 15. Run 1000 iterations, fail if metrics miss targets. Manual review 10% sample.",
         "priority": "medium",
         "dependencies": [
-          "17",
-          "18",
-          "19",
-          "20",
-          "21"
+          "74",
+          "76",
+          "77"
         ],
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T07:00:01.060Z"
-      },
-      {
-        "id": "34",
-        "title": "Training Summary Document Generator",
-        "description": "Generate a comprehensive training summary document combining all analysis results into a human-readable markdown file for chatter training.",
-        "details": "Create `scripts/analysis/summary_generator.py`:\n\n1. **TrainingSummary structure**:\n```markdown\n# Chatter Training Insights\nBased on analysis of {n} real conversations\n\n## Executive Summary\n- Key finding 1\n- Key finding 2\n- Key finding 3\n\n## Subscriber Tiers Overview\n[Table with tier stats]\n\n## Winning Patterns by Tier\n### New Subscribers\n[Playbook summary]\n\n### Low Spenders\n[Playbook summary]\n... etc\n\n## Top Techniques\n1. Teasing - when to use, example scripts\n2. Transactional - when to use, example scripts\n...\n\n## Quick Reference\n[Mood-approach table]\n[Pricing guidelines]\n\n## Script Templates\n[Organized by category]\n\n## What to Avoid\n[Common mistakes]\n```\n\n2. **Functions**:\n- `generate_executive_summary(all_analysis: Dict) -> str`\n- `generate_tier_overview(tier_stats: Dict) -> str`\n- `generate_technique_section(techniques: List) -> str`\n- `compile_training_summary(all_analysis: Dict) -> str`\n\n3. **Output**: `data/insights/training_summary.md`\n\n4. **Formatting**: Clean markdown with tables, bullet points, and clear headers for easy reading",
-        "testStrategy": "Verify training_summary.md is well-formatted markdown. Check all sections are populated. Verify links to playbooks work. Test rendering in markdown preview.",
-        "priority": "medium",
-        "dependencies": [
-          "26",
-          "27",
-          "28",
-          "29",
-          "30",
-          "32"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create test_conversations.py with 20 Scripted Fan Conversations",
+            "description": "Develop a pytest module containing 20 scripted fan-bot conversations averaging 15 turns each, simulating realistic fan interactions for metric validation.",
+            "dependencies": [],
+            "details": "Define conversation scripts as lists of dicts with role/content pairs. Use pytest fixtures to load IGChatbot with pytest-mock for LLM responses. Ensure diversity in topics, fan behaviors, and edge cases like long-term memory recall.",
+            "status": "pending",
+            "testStrategy": "Verify each convo loads without errors: assert len(convo) == expected_turns. Run pytest on fixture setup.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Core Success Metrics Calculation Functions",
+            "description": "Add functions to compute repetition_rate (<5%), average conversation length (>15 turns), and placeholder for human_likeness_score (1-10 scale).",
+            "dependencies": [
+              1
+            ],
+            "details": "repetition_rate(convo): count repeated_phrases/total_phrases using difflib.SequenceMatcher(ratio>0.8). avg_length(all_convos): mean(len(c) for c in convos). human_likeness_score: initial manual stub returning 5.0, later integrate LLM judge.",
+            "status": "pending",
+            "testStrategy": "Unit tests: assert repetition_rate(mock_repetitive_convo) > 0.05, assert repetition_rate(mock_unique_convo) < 0.05, assert avg_length([15-turn, 16-turn]) == 15.5.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add pytest Tests for Edge Cases and Success Metric Assertions",
+            "description": "Write tests validating edge cases: 30-day fan return with memory continuity, 100-message cap enforcement, phrase deduping, with assertions on metrics.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Mock datetime for 30-day gap test: assert memory continues correctly. Test trim to 100 messages/50 phrases. Run 1000 iterations: fail if any metric misses targets (repetition<5%, length>15). Use hypothesis for randomization.",
+            "status": "pending",
+            "testStrategy": "pytest-mock patches: test_memory_continuity_after_30days(), test_enforce_100_msg_cap(), test_phrase_deduping(). Assert metrics post-run.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement Load Test for 100 Concurrent Fans",
+            "description": "Create concurrent load test simulating 100 fans running scripted conversations simultaneously, measuring overall system performance.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use pytest with pytest-xdist or concurrent.futures.ThreadPoolExecutor. Each thread runs a full convo script. Assert no failures, collect aggregate metrics across all sessions.",
+            "status": "pending",
+            "testStrategy": "pytest test_load_100_concurrent: assert all_convos_metrics satisfy thresholds. Time total execution, log failures.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add Profiling for Save/Load Latency and Manual Review Process",
+            "description": "Profile ConversationMemory save/load operations to ensure <100ms latency; document manual human_likeness review for 10% convo sample.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Use cProfile or line_profiler on memory.to_dict()/from_dict(). Assert p95 latency <100ms over 1000 runs. Create manual_review.py to score 2 convos (10%) on 1-10 scale, average >7 target.",
+            "status": "pending",
+            "testStrategy": "Automated: assert profile_latency('save') < 0.1s. Manual: Run test suite, review output convos, log scores to validate human_likeness >7.",
+            "parentId": "undefined"
+          }
         ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T07:00:05.439Z"
-      },
-      {
-        "id": "35",
-        "title": "Master Analysis Pipeline Script",
-        "description": "Create the run_full_analysis.py master script that orchestrates all analysis phases in sequence with progress tracking and resumability.",
-        "details": "Create `scripts/run_full_analysis.py`:\n\n1. **Pipeline phases**:\n```python\nPHASES = [\n    ('data_loading', 'Load and group conversations'),\n    ('tier_statistics', 'Calculate tier statistics'),\n    ('approach_analysis', 'Analyze approaches by tier'),\n    ('mood_analysis', 'Build mood-approach matrix'),\n    ('message_analysis', 'Analyze message content'),\n    ('keyword_extraction', 'Extract keywords'),\n    ('opener_analysis', 'Analyze openers'),\n    ('closing_analysis', 'Analyze closing patterns'),\n    ('objection_analysis', 'Analyze objection handling'),\n    ('ai_thread_analysis', 'AI analysis of threads'),\n    ('playbook_generation', 'Generate tier playbooks'),\n    ('template_extraction', 'Extract script templates'),\n    ('technique_deepdive', 'Deep dive on techniques'),\n    ('reference_cards', 'Generate quick reference'),\n    ('dashboard_export', 'Export dashboard data'),\n    ('summary_generation', 'Generate training summary'),\n]\n```\n\n2. **CLI interface**:\n```bash\npython scripts/run_full_analysis.py \\\n    --parsed-dir data/parsed_conversations \\\n    --output-dir data/insights \\\n    --model gpt-4o  # or gpt-5.2 for AI phases\n    --skip-ai  # optional: skip AI phases for faster run\n    --phase message_analysis  # optional: run single phase\n    --resume  # resume from last checkpoint\n    --workers 10  # for parallel processing\n```\n\n3. **Features**:\n- Progress bar per phase with rich library\n- Checkpoint after each phase for resumability\n- Phase dependency validation\n- Cost tracking for AI phases\n- Summary report at end\n\n4. **Output**: All files in `data/insights/` as specified in PRD section 4.2",
-        "testStrategy": "Run full pipeline with --skip-ai first. Verify all output files are created. Test --resume by interrupting mid-run. Test single phase execution with --phase.",
-        "priority": "high",
-        "dependencies": [
-          "16",
-          "17",
-          "18",
-          "19",
-          "20",
-          "21",
-          "22",
-          "23",
-          "24",
-          "25",
-          "26",
-          "27",
-          "28",
-          "29",
-          "30",
-          "32",
-          "33",
-          "34"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T07:00:09.601Z"
-      },
-      {
-        "id": "36",
-        "title": "Create tip data validation and flagging script",
-        "description": "Implement a validation script to detect and flag unreliable tip data. The current bug causes outcome.tip_amount to contain lifetime tips from the subscriber panel instead of per-screenshot tips. Create a script that identifies conversations where tip_amount equals subscriber_stats.tips and marks tip data as unreliable.",
-        "details": "Create `scripts/analysis/tip_data_validator.py`:\n\n```python\nfrom dataclasses import dataclass\nfrom typing import List, Dict\nfrom scripts.analysis.data_loader import ConversationThread, load_and_prepare_data\n\n@dataclass\nclass TipValidationResult:\n    thread_id: str\n    tip_amount: float\n    lifetime_tips: float\n    is_reliable: bool\n    flag_reason: str\n\ndef validate_tip_data(threads: List[ConversationThread]) -> Dict:\n    results = []\n    for thread in threads:\n        for ss in thread.screenshots:\n            if ss.outcome and ss.outcome.tip_amount:\n                sub_stats = ss.subscriber_stats\n                lifetime_tips = sub_stats.tips if sub_stats else None\n                # Flag if tip_amount equals lifetime tips (parsing bug)\n                is_reliable = tip_amount != lifetime_tips if lifetime_tips else True\n                results.append(TipValidationResult(...))\n    \n    return {\n        'total_checked': len(results),\n        'reliable': sum(1 for r in results if r.is_reliable),\n        'flagged': [r for r in results if not r.is_reliable],\n        'recommendation': 'Mark all tip data as unreliable in reports'\n    }\n```\n\nAdd a `tip_data_reliable: bool = False` field to analysis outputs. Update statistical_analysis.py to exclude tip-based metrics or clearly label them as unreliable.",
-        "testStrategy": "1. Run validator on full dataset, verify it correctly identifies conversations where tip_amount == subscriber_stats.tips\n2. Unit test with mock data containing known parsing errors\n3. Verify output reports include unreliable tip data warnings\n4. Compare flagged count against known dataset statistics",
-        "priority": "high",
-        "dependencies": [],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "37",
-        "title": "Implement approach classification refinement",
-        "description": "Refine the existing approach classification system with clearer criteria. Define distinct categories: playful (light humor, non-sexual fun), teasing (flirty, suggestive, building desire), transactional (direct business), romantic (GFE emotional connection), and direct (blunt, minimal buildup). Create validation samples to test classification accuracy.",
-        "details": "Modify `scripts/conversation_parser.py` to use improved classification criteria:\n\n```python\nAPPROACH_CRITERIA = {\n    'playful': {\n        'indicators': ['haha', 'lol', 'joke', 'funny', 'silly', 'game'],\n        'excludes': ['sexy', 'naughty', 'tease', 'want you'],\n        'description': 'Light humor, jokes, casual banter, non-sexual fun'\n    },\n    'teasing': {\n        'indicators': ['tease', 'waiting', 'imagine', 'wish you could', 'naughty'],\n        'description': 'Flirty, suggestive, withholding content to build desire'\n    },\n    'transactional': {\n        'indicators': ['$', 'price', 'PPV', 'unlock', 'purchase', 'buy'],\n        'description': 'Direct business talk, clear pricing'\n    },\n    'romantic': {\n        'indicators': ['miss you', 'thinking of you', 'babe', 'love', 'special to me'],\n        'description': 'GFE emotional connection, relationship simulation'\n    },\n    'direct': {\n        'indicators': ['here is', 'sent you', 'check this'],\n        'excludes': ['playful', 'teasing', 'romantic'],\n        'description': 'Blunt, minimal buildup, straight to the offer'\n    }\n}\n```\n\nCreate `scripts/analysis/approach_validator.py` to sample and validate classification accuracy against manual review.",
-        "testStrategy": "1. Create a gold-standard validation set of 100 manually classified conversations\n2. Run classifier against validation set, measure precision/recall per category\n3. Target: 80%+ agreement with manual classification\n4. Compare old vs new classification distributions across full dataset",
-        "priority": "high",
-        "dependencies": [
-          "36"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "38",
-        "title": "Build objection pattern extraction system",
-        "description": "Create a comprehensive objection detection system that identifies subscriber messages containing objection indicators. Extract price objections, timing objections, trust objections, need objections, and commitment objections from conversation data.",
-        "details": "Create `scripts/analysis/objection_analysis.py`:\n\n```python\nfrom dataclasses import dataclass\nfrom typing import List, Optional\nfrom enum import Enum\n\nclass ObjectionType(str, Enum):\n    PRICE = 'price'\n    TIMING = 'timing'\n    TRUST = 'trust'\n    NEED = 'need'\n    COMMITMENT = 'commitment'\n\nOBJECTION_PATTERNS = {\n    ObjectionType.PRICE: [\n        r'too expensive', r\"can't afford\", r'too much', r\"that's a lot\",\n        r'broke', r'no money', r'budget', r'cheaper', r'discount'\n    ],\n    ObjectionType.TIMING: [\n        r'maybe later', r'not now', r'next time', r'after payday',\n        r'when i get paid', r'tomorrow', r'next week'\n    ],\n    ObjectionType.TRUST: [\n        r'is it worth', r'how do i know', r'what if', r'scam',\n        r'not sure if', r'trust'\n    ],\n    ObjectionType.NEED: [\n        r\"don't need\", r'already have', r'not interested',\n        r'not for me', r'not my thing'\n    ],\n    ObjectionType.COMMITMENT: [\n        r\"i'll think about\", r'let me see', r'not sure',\n        r'maybe', r'idk', r\"i don't know\"\n    ]\n}\n\n@dataclass\nclass ObjectionInstance:\n    objection_text: str\n    objection_type: ObjectionType\n    message_index: int  # Position in conversation\n    subscriber_tier: str\n    thread_id: str\n    chatter: str\n\ndef extract_objections(threads: List[ConversationThread]) -> List[ObjectionInstance]:\n    # Iterate all subscriber messages\n    # Match against patterns\n    # Return structured objection instances\n```",
-        "testStrategy": "1. Run extraction on full dataset, verify coverage of common objection phrases\n2. Manual review of 50 random extracted objections for accuracy\n3. Verify each objection type has minimum 30 instances (per PRD requirement)\n4. Check extraction correctly identifies message position in thread",
-        "priority": "high",
-        "dependencies": [],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T08:13:01.509Z"
-      },
-      {
-        "id": "39",
-        "title": "Implement response effectiveness tracking",
-        "description": "For each objection found, capture the creator's response(s) following the objection and track whether a sale occurred within the next 5 messages. Calculate success rate per response pattern and identify which chatters handle which objections best.",
-        "details": "Extend `scripts/analysis/objection_analysis.py`:\n\n```python\n@dataclass\nclass ObjectionResponse:\n    objection: ObjectionInstance\n    response_text: str\n    response_chatter: str\n    resulted_in_sale: bool\n    messages_to_sale: Optional[int]  # None if no sale\n    sale_amount: Optional[float]\n\ndef track_objection_responses(threads: List[ConversationThread]) -> List[ObjectionResponse]:\n    responses = []\n    for thread in threads:\n        objections = extract_objections_from_thread(thread)\n        for obj in objections:\n            # Get next creator message(s) after objection\n            response = get_creator_response(thread, obj.message_index)\n            # Check next 5 messages for sale\n            sale_within_5 = check_sale_in_window(thread, obj.message_index, window=5)\n            responses.append(ObjectionResponse(\n                objection=obj,\n                response_text=response,\n                response_chatter=thread.chatter,\n                resulted_in_sale=sale_within_5.occurred,\n                messages_to_sale=sale_within_5.distance,\n                sale_amount=sale_within_5.amount\n            ))\n    return responses\n\ndef calculate_response_effectiveness(responses: List[ObjectionResponse]) -> Dict:\n    # Group by objection_type + response pattern\n    # Calculate success rate per pattern\n    # Identify top performers per objection type\n```",
-        "testStrategy": "1. Verify 5-message window correctly identifies sales\n2. Test with known conversion scenarios from example conversations\n3. Validate chatter attribution is correct\n4. Check success rate calculations sum correctly (total sales / total objections)",
-        "priority": "high",
-        "dependencies": [
-          "38"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T08:13:07.244Z"
-      },
-      {
-        "id": "40",
-        "title": "Generate objection handling playbook",
-        "description": "Create structured playbook output showing best responses for each objection type, with success rates, examples from top performers (Arvin, Leonel), and tier-specific notes. Output in both Markdown and JSON formats.",
-        "details": "Create `scripts/analysis/playbook_generator.py`:\n\n```python\n@dataclass\nclass PlaybookEntry:\n    objection_pattern: str\n    objection_type: ObjectionType\n    best_response: str\n    best_response_success_rate: float\n    best_response_chatter: str\n    alternative_responses: List[Tuple[str, float, str]]  # (text, rate, chatter)\n    what_not_to_do: str\n    what_not_to_do_rate: float\n    tier_notes: Dict[str, str]  # tier -> specific advice\n\ndef generate_playbook(responses: List[ObjectionResponse]) -> List[PlaybookEntry]:\n    # Group responses by objection type\n    # Find highest success rate responses\n    # Find lowest success rate (what not to do)\n    # Extract tier-specific patterns\n    \ndef format_playbook_markdown(entries: List[PlaybookEntry]) -> str:\n    # Format as per PRD example:\n    # Objection: \"I can't afford it\"\n    # - Best Response (73% success): [example from Arvin]\n    # - Alternative (61% success): [example from Leonel]\n    # - What NOT to do (12% success): [pattern]\n    # - Tier-specific notes\n\ndef format_playbook_json(entries: List[PlaybookEntry]) -> Dict:\n    # Structured JSON for API consumption\n```\n\nOutput to `data/insights/objection_playbook.md` and `data/insights/raw/objection_playbook.json`",
-        "testStrategy": "1. Verify playbook covers 80%+ of observed objections (PRD requirement)\n2. Check success rates are mathematically correct\n3. Validate examples actually come from named chatters\n4. Review tier-specific notes for each objection type",
-        "priority": "high",
-        "dependencies": [
-          "39"
-        ],
-        "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-12-22T08:13:12.618Z"
-      },
-      {
-        "id": "41",
-        "title": "Implement opener effectiveness analysis",
-        "description": "Extract and categorize first creator messages from each conversation thread. Categorize opener types (question, compliment, teaser, direct, re-engagement) and calculate opener type to sale conversion rate by subscriber tier.",
-        "details": "Create `scripts/analysis/conversation_flow.py`:\n\n```python\nfrom enum import Enum\nfrom dataclasses import dataclass\n\nclass OpenerType(str, Enum):\n    QUESTION = 'question'  # \"How's your day?\"\n    COMPLIMENT = 'compliment'  # \"I was thinking about you\"\n    TEASER = 'teaser'  # \"I have something special...\"\n    DIRECT = 'direct'  # \"Want to see something?\"\n    REENGAGEMENT = 'reengagement'  # \"Haven't heard from you...\"\n\nOPENER_PATTERNS = {\n    OpenerType.QUESTION: [r'\\?$', r'how (are|r) (you|u)', r'what.*doing'],\n    OpenerType.COMPLIMENT: [r'thinking (of|about) you', r'miss you', r'beautiful'],\n    OpenerType.TEASER: [r'something special', r'surprise', r'secret', r'guess what'],\n    OpenerType.DIRECT: [r'want to see', r'check this', r'sent you'],\n    OpenerType.REENGAGEMENT: [r\"haven't heard\", r'where.*been', r'been a while']\n}\n\n@dataclass\nclass OpenerAnalysis:\n    opener_text: str\n    opener_type: OpenerType\n    subscriber_tier: str\n    resulted_in_sale: bool\n    sale_amount: Optional[float]\n    thread_id: str\n\ndef analyze_openers(threads: List[ConversationThread]) -> Dict:\n    # Extract first creator message per thread\n    # Classify opener type\n    # Track sale outcomes\n    # Return {tier: {opener_type: {count, conversion_rate, avg_sale}}}\n```",
-        "testStrategy": "1. Verify opener extraction gets actual first creator message\n2. Test classifier accuracy against manual sample\n3. Calculate conversion rates by tier and opener type\n4. Verify statistical significance (n>30 per category)",
-        "priority": "medium",
-        "dependencies": [],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "42",
-        "title": "Build closing phrase analysis system",
-        "description": "Find the last creator message before 'unlocked' or sale confirmation. Extract common closing patterns (scarcity, urgency, value, soft closes) and calculate effectiveness by tier and approach.",
-        "details": "Extend `scripts/analysis/conversation_flow.py`:\n\n```python\nclass CloseType(str, Enum):\n    SCARCITY = 'scarcity'  # \"Only sending this to you\"\n    URGENCY = 'urgency'  # \"Just filmed this\"\n    VALUE = 'value'  # \"You're going to love this\"\n    SOFT = 'soft'  # \"Let me know if you want it\"\n\nCLOSE_PATTERNS = {\n    CloseType.SCARCITY: [r'only (for|to) you', r'exclusive', r'special for'],\n    CloseType.URGENCY: [r'just (filmed|made|took)', r'fresh', r'right now'],\n    CloseType.VALUE: [r\"you.*love\", r'worth it', r'amazing'],\n    CloseType.SOFT: [r'let me know', r'if you want', r'whenever you.*ready']\n}\n\n@dataclass\nclass ClosingAnalysis:\n    closing_text: str\n    close_type: CloseType\n    creator_approach: str  # From context\n    subscriber_tier: str\n    resulted_in_sale: bool\n    sale_amount: Optional[float]\n\ndef analyze_closings(threads: List[ConversationThread]) -> Dict:\n    # Find message before sale/unlock\n    # Classify closing type\n    # Cross-reference with approach\n    # Return effectiveness metrics\n```\n\nOutput closing templates by effectiveness to `data/insights/closing_phrases.json`",
-        "testStrategy": "1. Verify 'message before sale' detection is accurate\n2. Test close type classification against manual review\n3. Calculate effectiveness rates by tier\n4. Validate approach cross-referencing",
-        "priority": "medium",
-        "dependencies": [
-          "41"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "43",
-        "title": "Implement conversation length optimization analysis",
-        "description": "Analyze messages to first sale by tier and chatter. Calculate optimal conversation length before pitching and identify the point of diminishing returns (comparing Arvin's 22.5 msgs/thread vs Billy's 93.4 msgs/thread).",
-        "details": "Extend `scripts/analysis/conversation_flow.py`:\n\n```python\n@dataclass\nclass ConversationFlowMetrics:\n    messages_to_first_sale: List[int]  # Distribution\n    avg_messages_to_sale: float\n    median_messages_to_sale: float\n    optimal_pitch_point: int  # Message number with best conversion\n    diminishing_returns_point: int  # Where more chat hurts conversion\n\ndef analyze_conversation_length(threads: List[ConversationThread]) -> Dict:\n    # Track message count at time of first sale\n    # Group by tier, chatter\n    # Find optimal pitch timing\n    # Calculate diminishing returns\n    \n    return {\n        'by_tier': {\n            'new': {'avg_to_sale': X, 'optimal_pitch': Y, 'diminishing_at': Z},\n            ...\n        },\n        'by_chatter': {\n            'Arvin': {'avg_msgs_per_thread': 22.5, 'conversion_rate': ...},\n            'Billy': {'avg_msgs_per_thread': 93.4, 'conversion_rate': ...}\n        },\n        'insights': [\n            'Shorter conversations correlate with higher conversion for NEW tier',\n            'WHALE tier benefits from longer relationship building'\n        ]\n    }\n```",
-        "testStrategy": "1. Verify message counting is accurate (exclude empty messages)\n2. Compare calculated chatter averages against existing analysis\n3. Validate optimal pitch point has statistical significance\n4. Test diminishing returns calculation logic",
-        "priority": "medium",
-        "dependencies": [
-          "41"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "44",
-        "title": "Create price point optimization analysis",
-        "description": "Analyze PPV price distribution, price vs conversion rate curves, and optimal price points by tier. Identify gateway prices for NEW tier, comfortable spend limits for LOW tier, sweet spots for MEDIUM, and premium pricing for HIGH/WHALE.",
-        "details": "Create `scripts/analysis/pricing_analysis.py`:\n\n```python\n@dataclass \nclass PricePointAnalysis:\n    price: float\n    frequency: int  # How often this price appears\n    conversion_rate: float\n    tier_breakdown: Dict[str, int]  # tier -> count\n\ndef analyze_price_distribution(threads: List[ConversationThread]) -> Dict:\n    # Extract all PPV prices from outcome.ppv_price\n    # Count frequency per price point\n    # Calculate conversion (sales/offers) per price\n    \ndef find_optimal_prices_by_tier(threads: List[ConversationThread]) -> Dict:\n    return {\n        'new': {\n            'gateway_price': 10,  # Entry price that converts best\n            'max_comfortable': 25,\n            'conversion_curve': [(5, 0.8), (10, 0.7), (25, 0.4), ...]\n        },\n        'low': {...},\n        'medium': {\n            'sweet_spot_range': (25, 50),\n            'max_comfortable': 100\n        },\n        'high': {...},\n        'whale': {\n            'premium_prices': [100, 200, 500],\n            'no_ceiling_detected': True\n        }\n    }\n\ndef analyze_discount_effectiveness(threads: List[ConversationThread]) -> Dict:\n    # Find negotiations/discounts in conversation\n    # Track: \"I'll do it for $X\" patterns\n    # Compare discount vs no-discount conversion\n```",
-        "testStrategy": "1. Verify price extraction captures all PPV prices\n2. Validate conversion rate calculations\n3. Check tier segmentation is accurate\n4. Test discount detection patterns",
-        "priority": "medium",
-        "dependencies": [],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "45",
-        "title": "Build high-conversion phrase mining system",
-        "description": "Extract creator phrases that appear within 3 messages before sales. Perform frequency analysis with success correlation and build a 'power phrases' dictionary including urgency words, exclusivity language, and desire triggers.",
-        "details": "Create `scripts/analysis/phrase_extraction.py`:\n\n```python\nfrom collections import Counter\nfrom typing import List, Tuple\n\n@dataclass\nclass PowerPhrase:\n    phrase: str\n    frequency: int\n    sales_correlation: float  # % of times it appears before a sale\n    category: str  # urgency, exclusivity, desire, etc.\n    example_context: str\n\ndef extract_presale_phrases(threads: List[ConversationThread], window: int = 3) -> List[PowerPhrase]:\n    # For each sale, extract 3 previous creator messages\n    # Extract n-grams (1-4 words)\n    # Count frequency\n    # Calculate correlation with sales\n    \ndef categorize_phrases(phrases: List[PowerPhrase]) -> Dict[str, List[PowerPhrase]]:\n    categories = {\n        'urgency': [r'just', r'right now', r'hurry', r'quick'],\n        'exclusivity': [r'only for you', r'special', r'exclusive', r'private'],\n        'desire': [r'want', r'imagine', r'fantasize', r'dream'],\n        'value': [r'worth', r'love', r'amazing', r'incredible'],\n        'intimacy': [r'just us', r'between us', r'our secret']\n    }\n    # Classify phrases into categories\n    \ndef build_power_phrases_dictionary(threads: List[ConversationThread]) -> Dict:\n    # Output: data/insights/raw/power_phrases.json\n    return {\n        'phrases': [...],\n        'by_category': {...},\n        'by_tier': {...},\n        'top_20': [...]\n    }\n```",
-        "testStrategy": "1. Verify 3-message window captures correct messages before sale\n2. Test phrase extraction for common known successful phrases\n3. Validate correlation calculations\n4. Check category classification accuracy",
-        "priority": "medium",
-        "dependencies": [],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "46",
-        "title": "Implement subscriber qualification keyword detection",
-        "description": "Build qualification keyword lists identifying subscriber words that indicate buying intent ('I want', 'show me', 'how much') vs words indicating they won't buy ('just looking', 'maybe', 'idk'). Create buyer readiness scoring.",
-        "details": "Extend `scripts/analysis/phrase_extraction.py`:\n\n```python\nBUYING_INTENT_INDICATORS = [\n    r'\\bi want\\b', r'show me', r'how much', r'send (it|me)',\n    r'\\byes\\b', r\"i'll (take|buy|get)\", r'unlock', r'give me',\n    r'ready', r'now', r'please'\n]\n\nNON_BUYER_INDICATORS = [\n    r'just looking', r'maybe', r'idk', r\"don't know\",\n    r'not sure', r'later', r'think about', r\"can't\",\n    r'too (much|expensive)', r'broke'\n]\n\n@dataclass\nclass SubscriberReadinessScore:\n    message_text: str\n    buying_signals: List[str]\n    non_buying_signals: List[str]\n    score: float  # -1 to 1 (negative = won't buy, positive = will buy)\n\ndef score_subscriber_readiness(messages: List[Message]) -> List[SubscriberReadinessScore]:\n    # Analyze each subscriber message\n    # Count buying vs non-buying indicators\n    # Return scored messages\n\ndef generate_qualification_guide(threads: List[ConversationThread]) -> Dict:\n    # Validate indicators against actual outcomes\n    # Output which keywords actually predict sales\n    return {\n        'high_intent_keywords': [...],  # Actually led to sales\n        'low_intent_keywords': [...],  # Actually led to no sale\n        'false_positives': [...],  # Seemed positive but didn't convert\n        'recommendation': 'Focus chat effort on subscribers showing X, Y, Z keywords'\n    }\n```",
-        "testStrategy": "1. Validate keyword detection against known buyer/non-buyer patterns\n2. Test readiness scoring correlates with actual sale outcomes\n3. Check false positive/negative rates\n4. Compare keyword effectiveness across tiers",
-        "priority": "low",
-        "dependencies": [
-          "45"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "47",
-        "title": "Create enhanced chatter profiles with objection specializations",
-        "description": "Extend existing chatter profiles to include per-chatter objection handling strengths. Identify which chatters handle which objections best and generate style recommendations based on data.",
-        "details": "Extend `scripts/analysis/chatter_analysis.py`:\n\n```python\n@dataclass\nclass EnhancedChatterProfile(ChatterProfile):\n    # Add new fields to existing ChatterProfile\n    objection_strengths: Dict[str, float]  # objection_type -> success_rate\n    best_objection_type: str\n    worst_objection_type: str\n    recommended_subscriber_types: List[str]  # e.g., ['budget-conscious', 'whale']\n    style_recommendation: str\n\ndef enhance_chatter_profiles(\n    profiles: Dict[str, ChatterProfile],\n    objection_responses: List[ObjectionResponse]\n) -> Dict[str, EnhancedChatterProfile]:\n    # Cross-reference chatter profiles with objection data\n    # Calculate per-chatter objection success rates\n    # Generate recommendations\n    \n    for name, profile in profiles.items():\n        chatter_responses = [r for r in objection_responses if r.response_chatter == name]\n        # Group by objection type\n        # Calculate success rates\n        # Identify strengths/weaknesses\n        \n    return enhanced_profiles\n\ndef generate_chatter_recommendation(profile: EnhancedChatterProfile) -> str:\n    # Based on data, recommend:\n    # - What tier to focus on\n    # - What objections they handle best\n    # - Style adjustments based on approach distribution\n```\n\nUpdate `data/insights/chatter_analysis.md` with enhanced profiles.",
-        "testStrategy": "1. Verify objection success rates calculated correctly per chatter\n2. Validate strength/weakness identification\n3. Review generated recommendations for reasonableness\n4. Cross-check with existing chatter analysis metrics",
-        "priority": "low",
-        "dependencies": [
-          "39",
-          "40"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "48",
-        "title": "Integrate all analysis modules into pipeline",
-        "description": "Extend run_full_analysis.py to incorporate all new analysis modules (objection analysis, conversation flow, pricing analysis, phrase extraction). Ensure outputs are generated in correct format and location.",
-        "details": "Modify `scripts/analysis/run_full_analysis.py`:\n\n```python\ndef run_full_pipeline(...):\n    # Existing stages...\n    \n    # Stage 5: Objection Analysis (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 5: OBJECTION ANALYSIS ===[/bold cyan]\")\n    from scripts.analysis.objection_analysis import run_objection_analysis\n    objection_results = run_objection_analysis(input_path, output_path)\n    results['stages']['objection_analysis'] = {...}\n    \n    # Stage 6: Conversation Flow Analysis (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 6: CONVERSATION FLOW ===[/bold cyan]\")\n    from scripts.analysis.conversation_flow import run_flow_analysis\n    flow_results = run_flow_analysis(input_path, output_path)\n    \n    # Stage 7: Pricing Analysis (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 7: PRICING ANALYSIS ===[/bold cyan]\")\n    from scripts.analysis.pricing_analysis import run_pricing_analysis\n    \n    # Stage 8: Phrase Extraction (NEW)\n    console.print(\"\\n[bold cyan]=== STAGE 8: PHRASE EXTRACTION ===[/bold cyan]\")\n    from scripts.analysis.phrase_extraction import run_phrase_extraction\n    \n    # Stage 9: Enhanced Chatter Profiles (NEW)\n    from scripts.analysis.chatter_analysis import enhance_chatter_profiles\n```\n\nUpdate output summary to include all new deliverables.",
-        "testStrategy": "1. Run full pipeline end-to-end\n2. Verify all output files are generated in correct locations\n3. Check pipeline_results.json includes all stages\n4. Validate no stage failures or missing data",
-        "priority": "low",
-        "dependencies": [
-          "40",
-          "42",
-          "43",
-          "44",
-          "45",
-          "47"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": "49",
-        "title": "Generate comprehensive output deliverables",
-        "description": "Create all PRD-specified output documents: Objection Handling Playbook (MD+JSON), Conversation Flow Guide, Pricing Strategy Guide, Language Pattern Database (JSON), and Enhanced Chatter Profiles. Ensure consistent formatting and actionable recommendations.",
-        "details": "Create `scripts/analysis/report_generator.py`:\n\n```python\ndef generate_all_deliverables(analysis_results: Dict, output_dir: Path):\n    # 1. Objection Handling Playbook\n    generate_objection_playbook_md(analysis_results, output_dir / 'objection_playbook.md')\n    generate_objection_playbook_json(analysis_results, output_dir / 'raw/objection_playbook.json')\n    \n    # 2. Conversation Flow Guide\n    generate_flow_guide(\n        openers=analysis_results['openers'],\n        closings=analysis_results['closings'],\n        length_optimization=analysis_results['conversation_length'],\n        output_path=output_dir / 'conversation_flow_guide.md'\n    )\n    \n    # 3. Pricing Strategy Guide\n    generate_pricing_guide(\n        price_analysis=analysis_results['pricing'],\n        output_path=output_dir / 'pricing_strategy_guide.md'\n    )\n    \n    # 4. Language Pattern Database (JSON)\n    generate_language_database(\n        power_phrases=analysis_results['phrases'],\n        qualification_keywords=analysis_results['keywords'],\n        output_path=output_dir / 'raw/language_patterns.json'\n    )\n    \n    # 5. Enhanced Chatter Profiles\n    # Already generated by chatter_analysis.py\n```\n\nOutput structure:\n```\ndata/insights/\n├── objection_playbook.md\n├── conversation_flow_guide.md\n├── pricing_strategy_guide.md\n├── chatter_analysis.md (enhanced)\n├── raw/\n│   ├── objection_playbook.json\n│   ├── language_patterns.json\n│   └── ...\n```",
-        "testStrategy": "1. Verify all 5 deliverables are generated\n2. Check Markdown formatting is valid\n3. Validate JSON structure matches expected schema\n4. Review content for actionable 'do this, not that' guidance (PRD requirement)",
-        "priority": "low",
-        "dependencies": [
-          "48"
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 50,
-        "title": "Create ConversationExampleExtractor Module",
-        "description": "Build the core module that extracts full conversation context around objections, sales, and techniques from parsed conversation data.",
-        "details": "Create `scripts/analysis/example_extractor.py` with the `ConversationExampleExtractor` class implementing:\n\n1. `get_objection_with_context(objection_id, context_messages=5)` - Returns messages before objection, the objection itself, creator response, and outcome\n2. `get_successful_sale_flow(tier, min_sale_amount=None)` - Gets full opener-to-close conversation flows for a tier\n3. `get_technique_examples(technique_name, n=5)` - Finds examples of specific techniques in action\n4. `compare_responses(objection_type, successful=True)` - Gets successful vs failed response comparisons\n\nLeverage existing `data_loader.py` for `ConversationThread` and `ParsedScreenshot` classes. Use the `objection_analysis.py` patterns for matching. Return structured `ConversationExample` dataclass objects with:\n- `messages: List[Message]` - Full conversation\n- `highlight_start/end: int` - Key technique indices\n- `outcome: Outcome` - Sale/tip result\n- `tier, chatter, technique, analysis: str` - Metadata\n\nPseudo-code:\n```python\nclass ConversationExampleExtractor:\n    def __init__(self, threads: List[ConversationThread]):\n        self.threads = threads\n        self.objections = self._index_objections()\n    \n    def get_objection_with_context(self, objection_type: str, context_messages: int = 5) -> List[ConversationExample]:\n        # Find objections of type, get surrounding messages\n        # Return with before/after context and outcome\n```",
-        "testStrategy": "Unit tests verifying: (1) Context extraction returns correct number of messages before/after, (2) Sale outcomes are correctly linked to objections, (3) Tier filtering works correctly, (4) Edge cases handled (objection at start/end of conversation). Integration test with sample parsed data to verify real extraction.",
-        "priority": "high",
-        "dependencies": [],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 51,
-        "title": "Build Evidence Database Schema and Generator",
-        "description": "Create the structured JSON evidence database that stores all extracted examples in a searchable, structured format for playbook generation.",
-        "details": "Create `scripts/analysis/evidence_database.py` that builds and maintains the evidence JSON structure:\n\n```python\n@dataclass\nclass EvidenceDatabase:\n    objection_examples: Dict[str, ObjectionEvidence]  # by objection type\n    tier_examples: Dict[str, TierEvidence]  # by tier\n    technique_examples: Dict[str, List[TechniqueEvidence]]\n    chatter_examples: Dict[str, ChatterEvidence]\n\n@dataclass\nclass ObjectionEvidence:\n    successful: List[ConversationExample]\n    failed: List[ConversationExample]\n    statistics: ObjectionStats  # from existing objection_analysis.py\n```\n\nOutput format (saved to `data/insights/evidence_database.json`):\n```json\n{\n  \"objection_examples\": {\n    \"price\": {\n      \"successful\": [{context, objection, response, outcome, chatter, tier, analysis}],\n      \"failed\": [...],\n      \"statistics\": {n, success_rate, avg_sale, by_tier}\n    }\n  },\n  \"tier_examples\": {...},\n  \"technique_examples\": {...}\n}\n```\n\nIntegrate with `example_extractor.py` to populate the database. Add CLI entry point for regeneration.",
-        "testStrategy": "Validate JSON schema compliance, verify all required fields populated, test serialization/deserialization round-trip, check statistics match existing `objection_analysis.py` output, ensure no duplicate examples.",
-        "priority": "high",
-        "dependencies": [
-          50
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 52,
-        "title": "Enhance Objection Playbook with Full Conversation Context",
-        "description": "Upgrade the existing objection playbook to include 5-10 message context before/after each objection, multiple examples per type, and side-by-side success/failure comparisons.",
-        "details": "Modify `scripts/analysis/objection_analysis.py` and create `scripts/analysis/enhanced_playbook_generator.py`:\n\n1. For each of 5 objection types (price, timing, trust, need, commitment):\n   - Include 3-5 successful examples with FULL conversation context (5-10 messages before and after)\n   - Include 2-3 failed examples for contrast\n   - Add tier-specific variations with examples\n   - Pattern analysis: what successful responses have in common\n\n2. Enhanced section format:\n```markdown\n## Handling \"I can't afford it\"\n\n**Success Rate:** 45.8% (n=277 instances)\n**Best Tier:** LOW (52.8%)\n\n### The Technique: Ask Their Budget\n\n**Example (Mikko, $2000 sale):**\n> [CONTEXT - 5 messages before]\n> SUB: ...\n> CREATOR: ...\n> [OBJECTION]\n> SUB: that's expensive...\n> [RESPONSE]\n> CREATOR: how much can u babe?\n> [OUTCOME - messages after]\n> SUB: ok 2000 works\n> [SALE: $2000]\n\n**Why it works:** [Psychology/pattern analysis]\n\n**Counter-example (failed):**\n> [Similar format showing what NOT to do]\n```\n\nOutput to `data/insights/playbooks/enhanced_objection_playbook.md`",
-        "testStrategy": "Verify each objection type has minimum 3 success examples and 2 failure examples. Confirm all statistics include sample sizes. Validate markdown formatting renders correctly. Check that context messages are actually from the same conversation thread.",
-        "priority": "high",
-        "dependencies": [
-          50,
-          51
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 53,
-        "title": "Create Tier-Specific Playbooks with Sale Flow Examples",
-        "description": "Enhance the existing tier playbooks (NEW/LOW/MEDIUM/HIGH/WHALE) with real conversation examples showing successful opener-to-sale flows, price points that worked, and tier-specific language patterns.",
-        "details": "For each tier playbook in `data/insights/playbooks/`:\n\n1. Add 3-5 full sale conversation examples:\n   - Complete opener → engagement → sale flow\n   - Include actual price points with evidence\n   - Show the full message sequence\n\n2. Price point evidence section:\n```markdown\n### Price Points That Work\n\n| Price Range | Success Rate | n | Example Sale |\n|-------------|--------------|---|-------------|\n| $5-20 | 68% | 45 | Weluu: \"$15 for this special preview...\" |\n| $21-50 | 52% | 32 | ... |\n```\n\n3. Language pattern analysis:\n   - Common openers that led to sales\n   - Phrases that worked vs didn't work\n   - Tier-specific vocabulary\n\n4. Flow examples:\n```markdown\n### Successful Sale Flow: LOW Tier ($94 avg)\n\n**Arvin with $200 subscriber:**\n> [OPENER]\n> CREATOR: Hey baby, how are you today? 😘\n> [ENGAGEMENT - 5 messages]\n> ...\n> [TRANSITION]\n> CREATOR: I made something special...\n> [CLOSE]\n> CREATOR: It's $50 for you babe\n> [SALE: $50]\n```\n\nCreate `scripts/analysis/tier_playbook_generator.py` using data from evidence database.",
-        "testStrategy": "Each tier playbook has at least 3 complete sale flow examples. Price point tables have sample sizes. All examples are real (verifiable from parsed data). Language patterns are extracted from actual messages, not fabricated.",
-        "priority": "high",
-        "dependencies": [
-          50,
-          51
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 54,
-        "title": "Build Chatter Style Deep-Dive Module",
-        "description": "Create deep-dive profiles for top 3 performers (Arvin, Leonel, Billy) showing their actual conversation techniques, side-by-side style comparisons, and what makes them effective with real examples.",
-        "details": "Create `scripts/analysis/chatter_deepdive.py` building on `chatter_analysis.py`:\n\n1. For each top performer (Arvin, Leonel, Billy):\n   - 5+ conversation examples demonstrating their style\n   - Technique breakdown with evidence\n   - What makes their approach effective\n\n2. Profile structure:\n```markdown\n## Arvin: The Playful Closer\n\n**Stats:** $42,867 total sales | 200 threads | $214/thread | 54% playful approach\n\n### Signature Techniques\n\n**1. Budget Inquiry (used 45 times, 62% success)**\n> Example: \"how much can u babe?\"\n> Context: [full conversation showing technique in action]\n> Why it works: Shifts from rejection to negotiation\n\n**2. Patience with Payday Objections**\n> Example: [conversation showing technique]\n```\n\n3. Side-by-side comparison table:\n```markdown\n### Style Comparison\n\n| Aspect | Arvin | Leonel | Billy |\n|--------|-------|--------|-------|\n| Primary Approach | Playful (54%) | Teasing (48%) | Romantic (41%) |\n| Avg Message Length | 73 chars | 95 chars | 68 chars |\n| Talk:Listen Ratio | 1.24 | 0.98 | 1.15 |\n| Best Tier | HIGH | MEDIUM | WHALE |\n```\n\nOutput to `data/insights/chatter_deepdives/` directory.",
-        "testStrategy": "Verify all 3 chatters have at least 5 conversation examples each. Statistics match existing `chatter_profiles.json`. Techniques are actually observed in their conversations. Comparison metrics are calculated from real data.",
-        "priority": "medium",
-        "dependencies": [
-          50,
-          51
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 55,
-        "title": "Integrate Psychological Research Citations",
-        "description": "Add research-backed citations to playbooks explaining why techniques work, referencing Cialdini's principles, SPIN selling, and text-based persuasion research.",
-        "details": "Create `scripts/analysis/psychology_citations.py` with a citation database:\n\n```python\nCITATIONS = {\n    \"reciprocity\": {\n        \"principle\": \"Cialdini's Reciprocity Principle\",\n        \"explanation\": \"People feel obligated to return favors\",\n        \"application\": \"Give value (preview, attention) before asking\",\n        \"source\": \"Cialdini, R. (2006). Influence: The Psychology of Persuasion\"\n    },\n    \"commitment_consistency\": {\n        \"principle\": \"Commitment & Consistency\",\n        \"explanation\": \"Once people state a position, they tend to follow through\",\n        \"application\": \"Ask 'how much can you do?' - once they state a number, they're committed\"\n    },\n    # ... scarcity, social_proof, authority, liking\n}\n```\n\nIntegrate into playbook generator:\n```markdown\n**Why it works:** Based on Cialdini's commitment principle - once they state a number, they're more likely to follow through. (Cialdini, 2006)\n```\n\nAdd SPIN selling methodology references:\n- Situation questions → Problem questions → Implication → Need-payoff\n\nAdd objection handling frameworks:\n- Feel-Felt-Found\n- Acknowledge-Bridge-Close",
-        "testStrategy": "All cited research is accurate and properly attributed. Principles are correctly matched to observed techniques. Citations enhance understanding without being overwhelming. At least 5 different psychological principles cited across playbooks.",
-        "priority": "medium",
-        "dependencies": [
-          52,
-          53
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 56,
-        "title": "Create PlaybookSection Data Structure and Generator",
-        "description": "Build the structured PlaybookSection dataclass and generator that combines claims, statistics, examples, counter-examples, and psychology into formatted playbook sections.",
-        "details": "Create `scripts/analysis/playbook_generator.py` with structured generation:\n\n```python\n@dataclass\nclass PlaybookSection:\n    title: str\n    claim: str  # What we're recommending\n    statistics: Dict  # n, success_rate, avg_sale\n    examples: List[ConversationExample]  # Real successful examples\n    counter_examples: List[ConversationExample]  # Real failed attempts\n    psychology: str  # Research backing\n    templates: List[str]  # Suggested response templates\n\nclass PlaybookGenerator:\n    def generate_section(self, section_data: PlaybookSection) -> str:\n        \"\"\"Generate markdown section with all components.\"\"\"\n        return f\"\"\"\n## {section_data.title}\n\n**Claim:** {section_data.claim}\n**Data:** Success Rate: {stats['success_rate']}% (n={stats['n']}), Avg Sale: ${stats['avg_sale']}\n\n### Examples\n{self._format_examples(section_data.examples)}\n\n### What NOT to Do\n{self._format_counter_examples(section_data.counter_examples)}\n\n### Why It Works\n{section_data.psychology}\n\n### Response Templates\n{self._format_templates(section_data.templates)}\n\"\"\"\n```\n\nEnsure consistent formatting across all playbook outputs.",
-        "testStrategy": "Generated sections follow consistent structure. All required fields present. Markdown renders correctly. Statistics formatted with appropriate precision. Examples properly escaped for markdown.",
-        "priority": "medium",
-        "dependencies": [
-          50,
-          51,
-          55
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 57,
-        "title": "Implement Validation and Deduplication Pipeline",
-        "description": "Create validation system to ensure all examples are real (from parsed data), statistics have sample sizes, examples aren't cherry-picked, and no duplicates exist.",
-        "details": "Create `scripts/analysis/validation.py`:\n\n```python\nclass EvidenceValidator:\n    def __init__(self, threads: List[ConversationThread], evidence_db: EvidenceDatabase):\n        self.threads = threads\n        self.evidence_db = evidence_db\n    \n    def validate_example_exists(self, example: ConversationExample) -> bool:\n        \"\"\"Verify example comes from actual parsed data.\"\"\"\n        # Match thread_id and message content\n        \n    def check_sample_sizes(self) -> List[Warning]:\n        \"\"\"Ensure all statistics have adequate sample sizes.\"\"\"\n        # Flag any n < 10 as potentially unreliable\n        \n    def detect_duplicates(self) -> List[Duplicate]:\n        \"\"\"Find duplicate examples across sections.\"\"\"\n        \n    def ensure_diversity(self) -> Dict[str, int]:\n        \"\"\"Check examples come from multiple chatters, not cherry-picked.\"\"\"\n        # Return distribution of chatters per technique\n        \n    def validate_all(self) -> ValidationReport:\n        \"\"\"Run all validations, return report.\"\"\"\n```\n\nIntegrate into playbook generation pipeline - fail if validation fails.",
-        "testStrategy": "Validation catches intentionally inserted fake examples. Duplicate detection works across playbook sections. Sample size warnings are accurate. Diversity check correctly identifies over-represented chatters.",
-        "priority": "medium",
-        "dependencies": [
-          51
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 58,
-        "title": "Create CLI Entry Points and Run Full Pipeline",
-        "description": "Build CLI commands to run the full evidence extraction and playbook generation pipeline, with options for regeneration and validation.",
-        "details": "Update `scripts/analysis/run_full_analysis.py` or create `scripts/generate_enhanced_playbooks.py`:\n\n```python\n@click.command()\n@click.option('--input-dir', default='data/parsed_conversations')\n@click.option('--output-dir', default='data/insights')\n@click.option('--validate/--no-validate', default=True)\n@click.option('--min-examples', default=3, help='Minimum examples per technique')\n@click.option('--context-messages', default=5, help='Messages before/after to include')\ndef generate_playbooks(input_dir, output_dir, validate, min_examples, context_messages):\n    \"\"\"Generate all enhanced playbooks from parsed conversation data.\"\"\"\n    # 1. Load data using data_loader\n    # 2. Build evidence database\n    # 3. Validate evidence\n    # 4. Generate enhanced objection playbook\n    # 5. Generate tier playbooks\n    # 6. Generate chatter deep-dives\n    # 7. Output summary statistics\n```\n\nAdd to existing analysis pipeline so it runs automatically.\n\nOutput:\n- `data/insights/evidence_database.json`\n- `data/insights/playbooks/enhanced_objection_playbook.md`\n- `data/insights/playbooks/*_subscriber_playbook.md` (enhanced)\n- `data/insights/chatter_deepdives/*.md`",
-        "testStrategy": "CLI runs without errors on full dataset. All expected output files generated. Validation runs and passes. Regeneration produces consistent results. Progress output is informative.",
-        "priority": "medium",
-        "dependencies": [
-          52,
-          53,
-          54,
-          57
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 59,
-        "title": "Add Pattern Analysis for Successful Responses",
-        "description": "Implement analysis to identify what successful responses have in common - linguistic patterns, length, timing, approach - to provide actionable insights beyond just examples.",
-        "details": "Create `scripts/analysis/pattern_analysis.py`:\n\n```python\nclass ResponsePatternAnalyzer:\n    def analyze_successful_patterns(self, examples: List[ConversationExample]) -> PatternReport:\n        \"\"\"Identify common patterns in successful responses.\"\"\"\n        patterns = {\n            'avg_response_length': self._avg_length([e.response for e in examples]),\n            'common_phrases': self._extract_phrases([e.response for e in examples]),\n            'question_rate': self._count_questions([e.response for e in examples]),\n            'emoji_usage': self._analyze_emojis([e.response for e in examples]),\n            'response_timing': self._avg_messages_to_response(examples),\n            'tone_distribution': self._classify_tones([e.response for e in examples])\n        }\n        return PatternReport(**patterns)\n    \n    def compare_success_vs_failure(self, success: List, failure: List) -> ComparisonReport:\n        \"\"\"What's different between successful and failed responses?\"\"\"\n```\n\nOutput pattern insights in playbooks:\n```markdown\n### Pattern Analysis: What Works\n\n- **Length:** Successful responses average 45 chars (vs 78 for failed)\n- **Questions:** 67% of successful responses ask a question\n- **Common phrases:** \"how much can u\", \"what about\", \"for you babe\"\n- **Tone:** 72% playful, 18% direct, 10% romantic\n```",
-        "testStrategy": "Pattern extraction produces meaningful insights. Comparisons between success/failure are statistically valid. Common phrases are actually common (appear in >10% of examples). Metrics are calculated correctly.",
-        "priority": "low",
-        "dependencies": [
-          50,
-          51
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 60,
-        "title": "Generate Training-Ready Output Format",
-        "description": "Ensure playbooks are formatted as long-form training materials that a new chatter could learn from standalone, not just outlines with bullets.",
-        "details": "Create training material formatting guidelines and templates:\n\n1. Each playbook section should be self-contained and educational\n2. Include \"How to Use This Section\" guides\n3. Add practice scenarios for each technique\n4. Include \"Quick Reference\" cards for common situations\n\nFormat enhancements:\n```markdown\n# Objection Handling Training Guide\n\n## How to Use This Guide\nThis guide teaches you to handle the 5 most common subscriber objections...\n\n## Quick Reference Card\n| If they say... | Try this... | Why it works |\n|----------------|-------------|-------------|\n| \"Too expensive\" | \"How much can you do?\" | Shifts to negotiation |\n\n## Deep Dive: Price Objections\n\n### The Situation\nA subscriber says they can't afford your content...\n\n### The Technique\n[Detailed explanation with multiple examples]\n\n### Practice Scenario\nImagine a LOW tier subscriber just said \"that's a lot\"...\n[Walk through ideal response]\n\n### Self-Check Questions\n1. What should you NEVER do when facing a price objection?\n2. Which tier responds best to budget questions?\n```\n\nOutput to `data/insights/training/` directory.",
-        "testStrategy": "Playbooks can be understood by someone with no prior context. Quick reference cards cover all major scenarios. Practice scenarios are realistic. Self-check questions have clear answers derivable from the content. Word count indicates substantive training material (>3000 words per major playbook).",
-        "priority": "low",
-        "dependencies": [
-          52,
-          53,
-          54,
-          56
-        ],
-        "status": "pending",
-        "subtasks": []
+        "updatedAt": "2025-12-23T09:29:58.331Z"
       }
     ],
     "metadata": {
-      "created": "2025-12-22T09:10:08.864Z",
-      "updated": "2025-12-22T09:10:08.864Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2025-12-23T09:29:58.331Z",
+      "taskCount": 8,
+      "completedCount": 8,
+      "tags": [
+        "master"
+      ]
     }
   }
 }
