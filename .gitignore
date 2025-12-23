@@ -47,3 +47,7 @@ data/ocr_output/
 
 # Keep insights but not raw screenshots
 Chatter Marines Field Handbook/
+
+# Task files
+# tasks.json
+# tasks/ 
