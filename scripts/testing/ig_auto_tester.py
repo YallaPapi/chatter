@@ -385,6 +385,132 @@ def run_full_test_suite(messages_per_test: int = 10):
     return runner.results
 
 
+def run_all_batch_tests(num_tests: int = 10, messages_per_test: int = 10):
+    """Run batch tests for ALL personas and compare results"""
+    print(f"\n{'='*60}")
+    print(f"FULL BATCH TEST: {num_tests} tests x {len(FAN_PERSONAS)} personas = {num_tests * len(FAN_PERSONAS)} total")
+    print(f"{'='*60}")
+
+    all_results = {}
+    for persona_id in FAN_PERSONAS.keys():
+        result = run_batch_test(persona_id, num_tests, messages_per_test)
+        if result:
+            all_results[persona_id] = result
+
+    # Print comparison
+    print(f"\n{'='*60}")
+    print("PERSONA COMPARISON")
+    print(f"{'='*60}")
+    print(f"\n{'PERSONA':<20} {'HUMAN':>8} {'CHARM':>8} {'GOAL':>8} {'OVERALL':>8} {'PASS%':>8}")
+    print("-" * 60)
+
+    sorted_results = sorted(all_results.items(), key=lambda x: -x[1]["scores"]["overall"])
+    for persona_id, result in sorted_results:
+        scores = result["scores"]
+        verdicts = result["verdicts"]
+        pass_pct = (verdicts.get("PASS", 0) / num_tests * 100) if num_tests > 0 else 0
+        print(f"{FAN_PERSONAS[persona_id]['name']:<20} {scores['human']:>8.1f} {scores['charm']:>8.1f} {scores['goal']:>8.1f} {scores['overall']:>8.1f} {pass_pct:>7.0f}%")
+
+    # Save combined results
+    combined_file = TEST_DIR / f"full_batch_{num_tests}tests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(combined_file, 'w') as f:
+        json.dump(all_results, f, indent=2)
+    print(f"\nCombined results saved to: {combined_file}")
+
+    return all_results
+
+
+def run_batch_test(persona: str, num_tests: int = 10, messages_per_test: int = 10):
+    """Run multiple tests for a single persona and aggregate results"""
+    if persona not in FAN_PERSONAS:
+        print(f"Unknown persona: {persona}")
+        print(f"Available: {', '.join(FAN_PERSONAS.keys())}")
+        return None
+
+    print(f"\n{'='*60}")
+    print(f"BATCH TEST: {num_tests} conversations with {FAN_PERSONAS[persona]['name']}")
+    print(f"{'='*60}")
+
+    runner = TestRunner()
+
+    for i in range(num_tests):
+        print(f"\n--- Test {i+1}/{num_tests} ---")
+        runner.run_test(persona, messages_per_test)
+
+    # Aggregate results
+    print(f"\n{'='*60}")
+    print(f"BATCH RESULTS: {persona}")
+    print(f"{'='*60}")
+
+    scores = {"human": [], "charm": [], "goal": [], "overall": []}
+    problems_count = {}
+    fixes_count = {}
+    verdicts = {"PASS": 0, "FAIL": 0, "NEEDS_WORK": 0}
+
+    for result in runner.results:
+        analysis = result.analysis
+        if "error" in analysis:
+            continue
+
+        # Collect scores
+        if "human" in analysis:
+            scores["human"].append(analysis["human"].get("score", 0))
+        if "charm" in analysis:
+            scores["charm"].append(analysis["charm"].get("score", 0))
+        if "goal" in analysis:
+            scores["goal"].append(analysis["goal"].get("score", 0))
+        scores["overall"].append(analysis.get("overall_score", 0))
+
+        # Count problems
+        for problem in analysis.get("problems", []):
+            problems_count[problem] = problems_count.get(problem, 0) + 1
+
+        # Count fixes
+        for fix in analysis.get("fixes", []):
+            fixes_count[fix] = fixes_count.get(fix, 0) + 1
+
+        # Count verdicts
+        verdict = analysis.get("verdict", "NEEDS_WORK")
+        verdicts[verdict] = verdicts.get(verdict, 0) + 1
+
+    # Print aggregated results
+    print(f"\nSCORES (avg of {len(scores['overall'])} tests):")
+    for key, vals in scores.items():
+        if vals:
+            avg = sum(vals) / len(vals)
+            print(f"  {key.upper():12}: {avg:.1f}/10  (range: {min(vals)}-{max(vals)})")
+
+    print(f"\nVERDICTS:")
+    for verdict, count in verdicts.items():
+        pct = (count / num_tests * 100) if num_tests > 0 else 0
+        print(f"  {verdict}: {count} ({pct:.0f}%)")
+
+    print(f"\nTOP PROBLEMS (by frequency):")
+    sorted_problems = sorted(problems_count.items(), key=lambda x: -x[1])[:5]
+    for problem, count in sorted_problems:
+        # Handle Unicode for Windows console
+        safe_problem = problem[:70].encode('ascii', 'replace').decode('ascii')
+        print(f"  [{count}x] {safe_problem}...")
+
+    print(f"\nTOP SUGGESTED FIXES (by frequency):")
+    sorted_fixes = sorted(fixes_count.items(), key=lambda x: -x[1])[:5]
+    for fix, count in sorted_fixes:
+        safe_fix = fix[:70].encode('ascii', 'replace').decode('ascii')
+        print(f"  [{count}x] {safe_fix}...")
+
+    # Save results
+    runner.save_results(f"batch_{persona}_{num_tests}tests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+
+    return {
+        "persona": persona,
+        "num_tests": num_tests,
+        "scores": {k: sum(v)/len(v) if v else 0 for k, v in scores.items()},
+        "verdicts": verdicts,
+        "top_problems": sorted_problems,
+        "top_fixes": sorted_fixes,
+    }
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -393,18 +519,33 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1:
-        persona = sys.argv[1]
-        if persona == "--all":
+        arg1 = sys.argv[1]
+
+        # Check for batch mode: --batch <persona> <num_tests>
+        if arg1 == "--batch":
+            persona = sys.argv[2] if len(sys.argv) > 2 else "nice_guy"
+            num_tests = int(sys.argv[3]) if len(sys.argv) > 3 else 10
+            run_batch_test(persona, num_tests)
+        elif arg1 == "--batch-all":
+            num_tests = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+            run_all_batch_tests(num_tests)
+        elif arg1 == "--all":
             run_full_test_suite()
-        elif persona in FAN_PERSONAS:
-            run_single_test(persona)
+        elif arg1 in FAN_PERSONAS:
+            run_single_test(arg1)
         else:
-            print(f"Unknown persona: {persona}")
-            print(f"Available: {', '.join(FAN_PERSONAS.keys())}")
+            print(f"Unknown option: {arg1}")
+            print(f"\nUsage:")
+            print(f"  python ig_auto_tester.py                        # Single nice_guy test")
+            print(f"  python ig_auto_tester.py <persona>              # Single test with persona")
+            print(f"  python ig_auto_tester.py --batch <persona> <N>  # N tests with persona")
+            print(f"  python ig_auto_tester.py --batch-all <N>        # N tests x ALL personas")
+            print(f"  python ig_auto_tester.py --all                  # All personas, 1 test each")
+            print(f"\nPersonas: {', '.join(FAN_PERSONAS.keys())}")
     else:
         # Default: run nice_guy test
         print("Running single test with 'nice_guy' persona...")
-        print("Use --all for full test suite")
+        print("Use --batch nice_guy 10 for batch testing")
         print(f"Available personas: {', '.join(FAN_PERSONAS.keys())}")
         print()
         run_single_test("nice_guy")
