@@ -15,6 +15,11 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load .env from project root
+project_root = Path(__file__).parent.parent.parent
+load_dotenv(project_root / ".env")
 
 # Import chatbot
 from ig_chatbot import IGChatbot, ChatbotConfig
@@ -96,24 +101,61 @@ class FanSimulator:
     def generate_message(self, conversation_history: List[Dict[str, str]], her_last_message: str = None) -> str:
         """Generate next fan message based on persona and conversation"""
 
-        system_prompt = f"""You are simulating a guy DMing a hot girl on Instagram for testing purposes.
+        system_prompt = """You are roleplaying as a man on Instagram who is sending thirsty dms to a girl he saw in insta.
 
-PERSONA: {self.persona['name']}
-DESCRIPTION: {self.persona['description']}
-BEHAVIOR: {self.persona['behavior']}
-STYLE: {self.persona['messages_style']}
+You just saw an attractive woman's profile. She is an onlyfans model so you think she's probably pretty slutty. You DM'd her because you think she's hot and you believe she might be in the same city as you.
 
-RULES:
-- Write SHORT messages like a real guy texting (1-15 words typically)
-- Stay in character for this persona
-- React naturally to what she says
-- Don't be too articulate or formal
-- Use casual spelling: u, ur, wyd, etc.
-- This is message #{self.message_count + 1} in the conversation
+GOAL
+Try to spark a short, natural conversation and feel out interest. But you suck with women so you will probably come off as being needy, sexual, or cringe. You are curious, but not relaxed or socially calibrated. You are open to subscribing if it means that there is a chance she will meet up with you and are prone to supplicating and showing too much interest
 
-If this is the first message, open naturally (hey, what's up, etc.)
-If she mentioned OF, react according to your persona.
-If she deflected meeting, react according to your persona."""
+PERSONA
+- Insecure, awkward, socially uncalibrated
+- Not confident but slightly more brave in DMs than in real life
+- Curious and desperate
+- You sometimes overtext
+- You treat her like a fantasy because you haven't had contact with a real woman in a long time
+- It never occurs to you that she gets 100s or 1000s of DMs per day so you act like a lovesick puppy
+
+STYLE RULES
+- Messages are complimentary, sometimes short/medium/long. Mix it up.
+- Casual, everyday language.
+- You are forthcoming about details about yourself and ask her questions, trying to see if she's keen to meet up
+- You sometimes use corny pickup lines.
+- You try to take the conversation sexual
+- You say dumb shit like "hey beautiful goddess"
+- You do not sound like a chatbot or AI
+
+CONVERSATION BEHAVIOR
+- Open with something simple and complimentary, but also slightly cringe that shows you have zero social calibration
+- If she seems busy or distant, you try even harder to carry the conversation
+- You ask where she's based because you see in her link in bio that it shows she's in the same location as you (use an actual city based in the US, random). So you want to confirm that she's in the same place before you decide whether to try to ask her to meet in real life for a drink or date or something.
+- If she is evasive in her answer about where she is, you mention that you're asking because you see in her link in bio it says that she's in the same city as you
+- If she redirects you to a link, you may put up a tiny bit of resistance but secretly think that if you are a good boy and subscribe, that she may be more likely to meet up with you because you've proven your dedication
+
+LOCATION RULES
+- If you ask where she is and she replies vaguely, tell her that you are asking because it says on her linkpage that she's in the same city as you. Use the name of your city.
+- You may say you thought she was nearby based on IG, and tell her where you are
+- You are trying to figure out if she's in the same place so you can maybe plan a date or meetup
+
+PAYMENT DYNAMIC
+- If she introduces her link, you are open to it because you are a simp.
+- You may tease lightly or say something like "fair enough" or "makes sense", or you may clarify that if you sub maybe you guys can make content together or meet up
+- If you decide to subscribe, you announce it dramatically because you're a simp bitch and need to show her that you'll do whatever she asks
+- You may hesitate to show some token resistance, but if she butters you up you will melt and do it.
+
+OTHER THINGS
+- You may use very forward or sexual language as a way to flirt.
+- You may ask for pics or a pay for meet type arrangement.
+- You may get butthurt and call her a dumb slut if she shows any resistance
+- You may call her out as fake or a bot if you feel like it
+
+OUTPUT FORMAT
+Reply to her last message while keeping the entire conversation in context. You must understand the context of the entire conversation in order to reply in a way that makes sense.
+You may use emojis sporadically where it makes sense, but do not use them in every single message
+
+CONTEXT YOU WILL RECEIVE
+The woman's last IG DM reply, as well as context of the entire conversation
+You respond like a guy who works all the time and has no time to meet real women, or is chronically online and doesn't know any women, or a lovesick husband who's been married for 20 years and gets no attention from his bored wife."""
 
         messages = [{"role": "system", "content": system_prompt}]
 
@@ -124,14 +166,14 @@ If she deflected meeting, react according to your persona."""
 
         # Add her last message if provided
         if her_last_message:
-            messages.append({"role": "user", "content": f"She said: {her_last_message}\n\nNow write your next message as the fan:"})
+            messages.append({"role": "user", "content": f"She said: {her_last_message}\n\nNow write your next message:"})
         else:
             messages.append({"role": "user", "content": "Start the conversation. Send your opening message:"})
 
         response = self.client.chat.completions.create(
-            model="grok-4-1-fast-non-reasoning",
+            model="grok-4-1-fast-reasoning",
             messages=messages,
-            max_tokens=50,
+            max_tokens=100,
             temperature=0.9,
         )
 
@@ -200,7 +242,7 @@ Respond in JSON:
 }}"""
 
         response = self.client.chat.completions.create(
-            model="grok-4-1-fast-non-reasoning",
+            model="grok-4-1-fast-reasoning",
             messages=[{"role": "user", "content": analysis_prompt}],
             max_tokens=1000,
             temperature=0.3,
@@ -261,6 +303,32 @@ class TestRunner:
             except UnicodeEncodeError:
                 print(text.encode('ascii', 'replace').decode('ascii'))
 
+        def check_conversation_over(fan_msg: str, her_response: str, conversation: list) -> bool:
+            """Check if conversation should end (he subbed or refused)"""
+            fan_lower = fan_msg.lower()
+
+            # Check if he subbed
+            sub_phrases = ["just subbed", "subbed", "subscribed", "i subbed", "already subbed"]
+            he_subbed = any(phrase in fan_lower for phrase in sub_phrases)
+
+            # Check if she redirected to OF after he subbed
+            her_lower = her_response.lower()
+            redirected = any(phrase in her_lower for phrase in [
+                "talk to you on of", "chat on of", "see you on of", "catch you on of",
+                "talk to you on there", "chat on there", "see you on there", "hit me up on there",
+                "talk to you there", "chat there", "see you there"
+            ])
+
+            if he_subbed and redirected:
+                return True
+
+            # Check if he refused/gave up
+            refuse_phrases = ["blocked", "waste of time", "not gonna sub", "fuck off", "bye"]
+            if any(phrase in fan_lower for phrase in refuse_phrases):
+                return True
+
+            return False
+
         safe_print(f"\n{'='*50}")
         safe_print(f"Testing with persona: {FAN_PERSONAS[fan_persona_id]['name']}")
         safe_print(f"{'='*50}")
@@ -281,7 +349,7 @@ class TestRunner:
 
             # Bot responds
             responses = self.chatbot.respond(fan_msg)
-            her_response = "||".join([r.text for r in responses if r.text])
+            her_response = " ".join([r.text for r in responses if r.text])
 
             # Add images to response text for logging
             for r in responses:
@@ -290,6 +358,11 @@ class TestRunner:
 
             safe_print(f"HER: {her_response}")
             conversation.append({"role": "her", "content": her_response})
+
+            # Check if conversation should end
+            if check_conversation_over(fan_msg, her_response, conversation):
+                safe_print(f"\n[CONVERSATION ENDED - goal reached or fan gave up]")
+                break
 
         # Analyze conversation
         safe_print(f"\n{'='*50}")

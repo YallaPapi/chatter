@@ -2,605 +2,94 @@
   "master": {
     "tasks": [
       {
-        "id": "71",
-        "title": "Set up Memory Data Directory and Implement MemoryManager Class",
-        "description": "Create the data/memories directory structure and implement MemoryManager class for JSON file persistence with fan_id indexing.",
-        "details": "Use Python's pathlib (std lib v3.12+) for directory management. Implement get_memory(fan_id: str) -> ConversationMemory | None, save_memory(memory: ConversationMemory), list_all_fans() -> List[str], delete_memory(fan_id: str). Use json module with ensure_ascii=False, indent=2 for readability. Generate fan_id as hashlib.sha256(f'{platform}:{username}'.encode()).hexdigest()[:16]. Create data/memories/index.json mapping fan_id to {'created_at': iso, 'last_active': iso}. Handle directory creation with Path('data/memories').mkdir(parents=True, exist_ok=True). Cap file operations with atomic writes using temporary files: write to .tmp then rename.",
-        "testStrategy": "Unit tests: test_directory_creation(), test_save_load_roundtrip(fan_id), test_list_all_fans_empty_populated(), test_delete_memory_removes_file(). Mock pathlib, assert index.json updates correctly. Test with 1000+ fan_ids for performance (<50ms load/save).",
+        "id": "176",
+        "title": "Create data/conversations directory and conversation_store.py",
+        "description": "Implement conversation history storage using JSON files in data/conversations/{user_id}.json with the specified structure including timestamps and metadata.",
+        "details": "Create directory data/conversations if not exists. Implement ConversationStore class with methods: load_conversation(user_id) -> dict or empty dict, save_conversation(user_id, data: dict), add_message(user_id, role: str, content: str). Use datetime.utcnow().isoformat() for timestamps. Ensure atomic writes using file locks or temp files. Structure exactly as PRD: {'user_id': str, 'created_at': str, 'updated_at': str, 'messages': list[dict]}. Handle file not found gracefully by creating new conversation.",
+        "testStrategy": "Unit tests: test_load_nonexistent(), test_save_load_roundtrip(), test_add_message_appends_correctly(), test_timestamps_updated(). Integration test: multiple add_message calls persist across loads. Test with 100 concurrent writes to verify thread-safety.",
         "priority": "high",
         "dependencies": [],
         "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create data/memories Directory Structure",
-            "description": "Set up the memories directory and initialize index.json using pathlib with mkdir(parents=True, exist_ok=True).",
-            "dependencies": [],
-            "details": "Use Path('data/memories').mkdir(parents=True, exist_ok=True); create empty index.json if not exists: Path('data/memories/index.json').write_text('{}', encoding='utf-8'). Handle cross-platform paths with pathlib[1][2].",
-            "status": "pending",
-            "testStrategy": "test_directory_creation(): assert Path('data/memories').exists(), index.json exists and is valid JSON.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement generate_fan_id Function",
-            "description": "Create utility function to generate 16-char SHA256 fan_id from platform:username string.",
-            "dependencies": [],
-            "details": "def generate_fan_id(platform: str, username: str) -> str: import hashlib; return hashlib.sha256(f'{platform}:{username}'.encode()).hexdigest()[:16]. Ensure consistent encoding.",
-            "status": "pending",
-            "testStrategy": "test_generate_fan_id(): assert len(generate_fan_id('ig','user'))==16, hashlib.verify digest integrity.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement get_memory and delete_memory Methods",
-            "description": "Add get_memory(fan_id: str) -> ConversationMemory | None and delete_memory(fan_id: str) to MemoryManager class.",
-            "dependencies": [
-              1
-            ],
-            "details": "get_memory: load JSON from data/memories/{fan_id}.json or return None; delete_memory: Path(f'data/memories/{fan_id}.json').unlink(missing_ok=True), remove from index.json atomically.",
-            "status": "pending",
-            "testStrategy": "test_get_memory_missing_returns_none(), test_delete_memory_removes_file_and_index().",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement save_memory with Atomic Writes",
-            "description": "Implement save_memory(memory: ConversationMemory) using temporary .tmp files then rename for atomicity.",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "Write memory.to_dict() to {fan_id}.json.tmp with json.dump(..., ensure_ascii=False, indent=2), then .replace({fan_id}.json). Update index.json {'created_at': iso, 'last_active': iso} atomically[1].",
-            "status": "pending",
-            "testStrategy": "test_save_memory_atomic(): simulate crash during write, verify no corruption; test_roundtrip_save_load().",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Implement list_all_fans and MemoryManager Initialization",
-            "description": "Add list_all_fans() -> List[str] reading index.json and complete MemoryManager __init__.",
-            "dependencies": [
-              1,
-              3,
-              4
-            ],
-            "details": "list_all_fans: load index.json, return sorted(list(fan_ids)); __init__: self.memories_dir = Path('data/memories'), ensure dir exists. Cap performance <50ms for 1000+ fans.",
-            "status": "pending",
-            "testStrategy": "test_list_all_fans_empty_populated(): assert [] on empty, correct list after saves; perf test 1000+ fans.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:56.751Z"
+        "subtasks": [],
+        "updatedAt": "2025-12-26T08:27:08.220Z"
       },
       {
-        "id": "72",
-        "title": "Implement ConversationMemory Dataclass with Core Methods",
-        "description": "Create ConversationMemory dataclass matching exact schema with methods for message/phrase/profile management and serialization.",
-        "details": "Use @dataclass from dataclasses (Python 3.12+) with field validators from pydantic v2.9+. Implement add_message(role: str, content: str, timestamp: str=now_iso(), phase: str=''), add_phrase(phrase: str), update_profile(key: str, value: Any), get_recent_phrases(n: int=10) -> List[str], to_dict() -> dict, from_dict(data: dict) -> Self. Auto-trim messages to 100 oldest first: self.messages = self.messages[-100:], used_phrases[-50:]. Update self.last_active = now_iso() on mutations. Use datetime.fromisoformat/isoformat() for timestamps. Validate fan_profile fields as Optional[str|int|List[str]].",
-        "testStrategy": "Unit tests: test_serialization_roundtrip_full_schema(), test_auto_trim_messages_101(), test_auto_trim_phrases_51(), test_update_profile_nested(), test_get_recent_phrases_empty_full(). Property-based tests with hypothesis for edge cases.",
+        "id": "177",
+        "title": "Implement FastAPI server with /chat endpoint and /health",
+        "description": "Create scripts/testing/api.py with FastAPI app, POST /chat endpoint matching exact request/response schema, GET /health, configurable port from env, .env loading.",
+        "details": "pip install fastapi uvicorn python-dotenv. from fastapi import FastAPI, HTTPException. app = FastAPI(). Load env: from dotenv import load_dotenv; load_dotenv(). @app.get('/health') -> {'status': 'ok'}. @app.post('/chat') with Pydantic models: class ChatRequest(BaseModel): user_id: str, message: str, platform: Optional[str]='instagram'. Response: class ChatResponse(BaseModel): response: str, conversation_ended: bool. Port: uvicorn.run('api:app', port=int(os.getenv('PORT', 8000))). Error handling: HTTPException(400) for missing fields.",
+        "testStrategy": "Run server, curl GET /health expect 200. curl POST /chat with valid payload expect 200 with response. Test invalid JSON (400), missing user_id (400), empty message (400). Verify server restarts cleanly.",
         "priority": "high",
         "dependencies": [
-          "71"
+          "176"
         ],
         "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define ConversationMemory dataclass with fields and validators",
-            "description": "Create the @dataclass structure with all required fields including messages, used_phrases, fan_profile, last_active, state, topics_covered using pydantic v2.9+ field validators. Validate fan_profile fields as Optional[str|int|List[str]].",
-            "dependencies": [],
-            "details": "Import dataclasses and pydantic. Define fields with appropriate types and defaults like messages: list[dict] = field(default_factory=list), fan_profile: dict[str, Any] = field(default_factory=dict), etc. Add validator for fan_profile values.",
-            "status": "pending",
-            "testStrategy": "Unit test field initialization and pydantic validation on invalid fan_profile types.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement add_message and add_phrase methods with trimming",
-            "description": "Add add_message(role: str, content: str, timestamp: str=now_iso(), phase: str='') and add_phrase(phrase: str) methods. Implement auto-trimming: messages[-100:], used_phrases[-50:]. Update last_active on both.",
-            "dependencies": [
-              1
-            ],
-            "details": "Use datetime.fromisoformat/isoformat() for timestamps. Append to lists, then trim oldest first with slicing. Call self.last_active = now_iso() in both methods. Define now_iso() helper using datetime.utcnow().isoformat().",
-            "status": "pending",
-            "testStrategy": "test_auto_trim_messages_101() and test_auto_trim_phrases_51(): add 101/51 items and assert len==100/50.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Implement update_profile and get_recent_phrases methods",
-            "description": "Add update_profile(key: str, value: Any) to set fan_profile[key]=value and get_recent_phrases(n: int=10) -> List[str] returning self.used_phrases[-n:]. Update last_active in update_profile.",
-            "dependencies": [
-              1
-            ],
-            "details": "In update_profile: self.fan_profile[key] = value; self.last_active = now_iso(). get_recent_phrases: return self.used_phrases[-n:] if self.used_phrases else []. Ensure type hints match spec.",
-            "status": "pending",
-            "testStrategy": "test_get_recent_phrases_empty_full(): assert empty list when no phrases, correct slicing when present.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement to_dict and from_dict serialization methods",
-            "description": "Add to_dict() -> dict converting all fields to serializable dict and from_dict(data: dict) -> Self reconstructing instance from dict. Handle datetime strings properly.",
-            "dependencies": [
-              1
-            ],
-            "details": "to_dict: return {f.name: getattr(self, f.name) for f in fields(self)} with custom handling for datetimes if needed. from_dict: use dataclass.replace or manual field assignment. Ensure timestamps parse with fromisoformat.",
-            "status": "pending",
-            "testStrategy": "test_serialization_roundtrip_full_schema(): assert memory == ConversationMemory.from_dict(memory.to_dict()).",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add helper functions and final integration validation",
-            "description": "Implement now_iso() helper and validate all methods update last_active correctly. Add any missing fields like state, topics_covered per schema. Run full class validation.",
-            "dependencies": [
-              2,
-              3,
-              4
-            ],
-            "details": "def now_iso() -> str: return datetime.utcnow().isoformat(). Ensure state: dict = field(default_factory=dict), topics_covered: list[str] = field(default_factory=list). Test mutation methods update last_active.",
-            "status": "pending",
-            "testStrategy": "Property-based tests with hypothesis: random messages/phrases/profiles, verify trimming, serialization, timestamps parse correctly.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:56.835Z"
+        "subtasks": [],
+        "updatedAt": "2025-12-26T08:30:15.643Z"
       },
       {
-        "id": "73",
-        "title": "Integrate MemoryManager into IGChatbot Respond Method",
-        "description": "Wire MemoryManager into IGChatbot.respond() to load memory at start, pass to prompt generation, save after response.",
-        "details": "In IGChatbot.respond(platform: str, username: str, message: str): fan_id = generate_fan_id(platform, username); memory = memory_manager.get_memory(fan_id) or create_new_memory(fan_id); memory.add_message('fan', message, phase=detect_phase(message)); context = memory.to_prompt_context(); response = llm.generate(prompt + context); memory.add_message('her', response); memory_manager.save_memory(memory). Update IGChatbot init to accept MemoryManager instance. Use contextlib for atomic save.",
-        "testStrategy": "Integration tests: test_first_message_creates_memory(), test_subsequent_messages_append(), test_memory_persists_across_restarts(). Mock LLM, assert memory file created/updated correctly.",
+        "id": "178",
+        "title": "Integrate conversation loading/saving into /chat endpoint",
+        "description": "Load conversation history at start of /chat, save updated history after response generation.",
+        "details": "In POST /chat: 1. conv = conversation_store.load_conversation(user_id). 2. conv['messages'].append({'role': 'fan', 'content': message, 'timestamp': now}). 3. Update conv['updated_at'] = now. 4. After generating response, append {'role': 'her', 'content': response, 'timestamp': now}. 5. conversation_store.save_conversation(user_id, conv). Ensure created_at set only on first save.",
+        "testStrategy": "Send first message to new user_id, verify file created with correct structure. Send second message same user_id, verify history loaded and both messages present. Delete file between requests to test fresh creation.",
         "priority": "high",
         "dependencies": [
-          "71",
-          "72"
+          "176",
+          "177"
         ],
         "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Update IGChatbot __init__ to Accept MemoryManager",
-            "description": "Modify the IGChatbot constructor to receive and store a MemoryManager instance as an attribute for use in respond method.",
-            "dependencies": [],
-            "details": "Add self.memory_manager: MemoryManager parameter to __init__. Store as self.memory_manager = memory_manager. Ensure backward compatibility if needed by making it optional with default None and raise error if used without it.",
-            "status": "pending",
-            "testStrategy": "Unit test: test_init_stores_memory_manager_correctly(), test_init_raises_error_without_memory_manager(). Verify type and reference equality.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement Memory Loading and Fan Message Addition in respond()",
-            "description": "Add logic at start of respond() to generate fan_id, load/create memory, add incoming fan message with phase detection.",
-            "dependencies": [
-              1
-            ],
-            "details": "Implement: fan_id = generate_fan_id(platform, username); memory = self.memory_manager.get_memory(fan_id) or create_new_memory(fan_id); memory.add_message('fan', message, phase=detect_phase(message)). Handle None case for get_memory.",
-            "status": "pending",
-            "testStrategy": "Unit tests: test_loads_existing_memory(), test_creates_new_memory_first_message(), test_adds_fan_message_with_phase(). Mock MemoryManager and assert calls.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Integrate Memory Context into LLM Prompt Generation",
-            "description": "Generate prompt context from memory and pass to LLM.generate() within the respond method.",
-            "dependencies": [
-              2
-            ],
-            "details": "After adding fan message: context = memory.to_prompt_context(); response = self.llm.generate(prompt + context). Ensure prompt variable is accessible or define base prompt template.",
-            "status": "pending",
-            "testStrategy": "Integration test: test_context_passed_to_llm_correctly(). Mock LLM.generate and memory.to_prompt_context, assert prompt contains context.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Add Bot Response to Memory After Generation",
-            "description": "Append the generated bot response to the conversation memory after LLM call.",
-            "dependencies": [
-              3
-            ],
-            "details": "Immediately after response generation: memory.add_message('her', response). Ensure timestamp and other defaults are handled by add_message method.",
-            "status": "pending",
-            "testStrategy": "Unit test: test_bot_response_added_to_memory(). Mock LLM, assert memory.add_message called with 'her' role and response content.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Implement Atomic Memory Save with Contextlib",
-            "description": "Use contextlib to wrap memory save operation ensuring atomicity, then save memory at end of respond().",
-            "dependencies": [
-              4
-            ],
-            "details": "Use @contextlib.contextmanager for atomic save: with atomic_save(self.memory_manager, memory): self.memory_manager.save_memory(memory). Implement atomic_save using file temp rename or db transaction pattern. Call at end of respond().",
-            "status": "pending",
-            "testStrategy": "Integration tests: test_first_message_creates_memory(), test_subsequent_messages_append(), test_memory_persists_across_restarts(). Mock LLM, assert memory file created/updated atomically.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:56.945Z"
+        "subtasks": [],
+        "updatedAt": "2025-12-26T08:30:15.645Z"
       },
       {
-        "id": "74",
-        "title": "Implement Used Phrases Tracking and Anti-Repetition Prompt Injection",
-        "description": "Track bot phrases in used_phrases array and inject 'Don't repeat these phrases: [...]' into get_phase_prompt().",
-        "details": "In ConversationMemory.add_phrase(phrase): self.used_phrases.append(phrase.lower().strip()); self.used_phrases = self.used_phrases[-50:]. In IGChatbot: after llm response, memory.add_phrase(extract_phrases(response)) where extract_phrases uses simple split('.')[:3]. Update get_phase_prompt(memory: ConversationMemory) -> str: return base_prompt + f'\\nDONT REPEAT these phrases: {\", \".join(memory.get_recent_phrases(15))}\\n'. Use difflib.SequenceMatcher to detect phrase similarity >0.8 to avoid near-duplicates.",
-        "testStrategy": "Behavioral tests: test_phrase_extraction_accuracy(), test_prompt_injection_contains_phrases(), test_prevents_repetition_in_mock_llm(). A/B test repetition rate before/after (<5% target).",
+        "id": "179",
+        "title": "Integrate existing LLM modules into API workflow",
+        "description": "Call ig_simple_prompt.py, llm_client.py, response_generator.py with conversation history to generate responses.",
+        "details": "Import existing modules: from ig_simple_prompt import get_system_prompt; from llm_client import LLMClient; from response_generator import generate_response. In /chat after loading history: system_prompt = get_system_prompt(platform). llm = LLMClient(). full_prompt = system_prompt + format_messages(conv['messages']). response_data = generate_response(llm, full_prompt). response = response_data['response']. conversation_ended = response_data.get('conversation_ended', False). Handle any exceptions from existing modules gracefully.",
+        "testStrategy": "Mock existing modules to return known responses. Test full flow: message in -> existing modules called with correct params -> expected response out. Verify conversation_ended flag set correctly for subscription messages.",
         "priority": "high",
         "dependencies": [
-          "72",
-          "73"
+          "178"
         ],
         "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Enhance add_phrase with difflib Similarity Check",
-            "description": "Update ConversationMemory.add_phrase to check new phrase against existing used_phrases using difflib.SequenceMatcher and skip if similarity >0.8.",
-            "dependencies": [],
-            "details": "Import difflib; before append: for existing in self.used_phrases: if difflib.SequenceMatcher(None, phrase.lower().strip(), existing).ratio() > 0.8: return. Then append and trim to [-50:].",
-            "status": "pending",
-            "testStrategy": "Unit test: test_add_phrase_similarity_duplicate_skipped(), test_add_phrase_low_similarity_added(), test_add_phrase_trim_after_50().",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement extract_phrases Function",
-            "description": "Create extract_phrases(response: str) -> List[str] that splits response by '.' and returns first 3 non-empty phrases.",
-            "dependencies": [],
-            "details": "def extract_phrases(response): return [p.strip() for p in response.split('.')[:3] if p.strip()]. Ensure phrases are meaningful sentences, handle edge cases like short responses.",
-            "status": "pending",
-            "testStrategy": "Unit tests: test_extract_phrases_long_text_returns_3(), test_extract_phrases_short_returns_all(), test_extract_phrases_empty_returns_empty().",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Integrate Phrase Extraction in IGChatbot",
-            "description": "After LLM response generation in IGChatbot, call memory.add_phrase(extract_phrases(response)) to track bot phrases.",
-            "dependencies": [
-              2
-            ],
-            "details": "In the response handling flow: response = llm.generate(...); memory.add_phrase(extract_phrases(response)); return response. Ensure called only for bot responses.",
-            "status": "pending",
-            "testStrategy": "Integration test: test_igchatbot_phrase_tracking_after_response(), mock LLM and verify add_phrase called with correct phrases.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Update get_phase_prompt with Anti-Repetition Injection",
-            "description": "Modify get_phase_prompt(memory: ConversationMemory) to append 'DONT REPEAT these phrases: [list]' using 15 recent phrases.",
-            "dependencies": [
-              1
-            ],
-            "details": "def get_phase_prompt(memory): base_prompt = ...; recent = memory.get_recent_phrases(15); return base_prompt + f'\\nDONT REPEAT these phrases: {\", \".join(recent)}\\n'. Handle empty list gracefully.",
-            "status": "pending",
-            "testStrategy": "Unit test: test_prompt_injection_contains_recent_phrases(), test_prompt_format_empty_phrases(), test_prompt_escapes_special_chars().",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add Behavioral Tests for Anti-Repetition",
-            "description": "Implement comprehensive tests verifying phrase tracking prevents repetition via mock LLM responses.",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4
-            ],
-            "details": "Create test_phrase_extraction_accuracy(), test_prompt_injection_contains_phrases(), test_prevents_repetition_in_mock_llm(). Target <5% repetition rate in A/B simulation.",
-            "status": "pending",
-            "testStrategy": "Mock LLM that repeats phrases; assert prompts contain anti-repetition instructions and simulated responses avoid tracked phrases >80% cases.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:57.056Z"
+        "subtasks": [],
+        "updatedAt": "2025-12-26T08:30:15.647Z"
       },
       {
-        "id": "75",
-        "title": "Build ProfileExtractor with Regex Patterns for Fan Info",
-        "description": "Create ProfileExtractor class to parse fan messages for name/location/job/interests/age using simple regex patterns.",
-        "details": "Use re module (std lib). Patterns: name: r'(?:my name is|call me|i’m|i am)\b\\s*([A-Z][a-z]+)', location: r'(?:from|i live in|in)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)', interests: r'(?:love|like|enjoy|into)\\s+([a-z]+(?:ing|\\s+and\\s+[a-z]+(?:ing)?))', age: r'\\b(\\d{2})\\s*(?:years? old|age)', job: r'(?:work as|i’m|job is|do for work)\\s+([A-Z][a-z]+)'. extract_from_message(msg: str) -> dict[str, Any]. Call in IGChatbot after fan message: updates = extractor.extract(message); memory.update_profile(**updates). Lowercase interests, normalize age to int.",
-        "testStrategy": "Unit tests with 50+ real fan message examples: test_name_extraction_variations(), test_location_cities(), test_interests_phrases(), test_age_formats(). Assert 85%+ extraction accuracy on validation set.",
+        "id": "180",
+        "title": "Implement conversation end detection using existing logic",
+        "description": "Integrate conversation end detection from ig_auto_tester.py into response generation flow.",
+        "details": "Import detection logic from ig_auto_tester.py (analyze how it detects subscription/refusal). After LLM response generation but before returning: ended = detect_conversation_end(message, response, conv_history). If ended, set conversation_ended: true and optionally append final message. Use heuristics: keywords like 'subbed', 'subscribed', 'onlyfans', 'of', 'refuse', 'no thanks'. Ensure doesn't interfere with normal conversation flow.",
+        "testStrategy": "Test cases: 'just subbed!' -> ended=true, 'you in miami?' -> ended=false, 'no thanks bye' -> ended=true. Verify response still generated even when ended=true. Test edge cases: partial keywords, multiple messages.",
         "priority": "medium",
         "dependencies": [
-          "72"
+          "179"
         ],
         "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create ProfileExtractor class with regex patterns",
-            "description": "Define the ProfileExtractor class and initialize it with compiled regex patterns for name, location, job, interests, and age using the re module.",
-            "dependencies": [],
-            "details": "Use re.compile() for each provided pattern: name r'(?:my name is|call me|i’m|i am)\\b\\s*([A-Z][a-z]+)', location r'(?:from|i live in|in)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)', interests r'(?:love|like|enjoy|into)\\s+([a-z]+(?:ing|\\s+and\\s+[a-z]+(?:ing)?))', age r'\\b(\\d{2})\\s*(?:years? old|age)', job r'(?:work as|i’m|job is|do for work)\\s+([A-Z][a-z]+)'. Store as class attributes.",
-            "status": "pending",
-            "testStrategy": "Unit test pattern compilation: assert all patterns are not None and have expected group counts (name/job/location:1, interests:1, age:1).",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement extract_from_message method core logic",
-            "description": "Implement the extract_from_message(msg: str) -> dict[str, Any] method to search message with each pattern and capture matches.",
-            "dependencies": [
-              1
-            ],
-            "details": "Use self.name_pattern.search(msg), etc. For each match, extract group(1). Handle None matches by skipping. Return dict with keys 'name', 'location', 'job', 'interests', 'age' containing first match or None.",
-            "status": "pending",
-            "testStrategy": "Test basic extraction with simple phrases like 'My name is Alice' -> {'name': 'Alice'}, verify None for unmatched fields.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add data normalization and processing",
-            "description": "Normalize extracted data: lowercase interests, convert age to int, title case name/location/job if matched.",
-            "dependencies": [
-              2
-            ],
-            "details": "In extract_from_message: if interests: interests.lower(); if age: int(age); name/location/job: .title() or .strip(). Ensure dict values are properly typed before return.",
-            "status": "pending",
-            "testStrategy": "Test normalization: 'LOVE hiking' -> 'love hiking', '25 years old' -> 25, 'alice' -> 'Alice'. Assert types: isinstance(age, int), isinstance(interests, str).",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Integrate ProfileExtractor into IGChatbot",
-            "description": "Add ProfileExtractor instance to IGChatbot and call extract_from_message after receiving fan messages.",
-            "dependencies": [
-              3
-            ],
-            "details": "In IGChatbot: self.extractor = ProfileExtractor(); after fan message: updates = self.extractor.extract(message); if updates: self.memory.update_profile(**updates). Handle empty updates gracefully.",
-            "status": "pending",
-            "testStrategy": "Integration test: mock fan message, assert memory.update_profile called with correct kwargs from extraction.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Write comprehensive unit tests for extraction",
-            "description": "Create unit tests covering all patterns with 50+ real fan message variations targeting 85%+ accuracy.",
-            "dependencies": [
-              3
-            ],
-            "details": "Implement test_name_extraction_variations(), test_location_cities(), test_interests_phrases(), test_age_formats(). Use real examples like 'I'm from New York', 'Love dancing and singing'. Assert extraction rates and edge cases (no match, multiple potential matches - take first).",
-            "status": "pending",
-            "testStrategy": "Run validation set of 50+ messages, compute accuracy metric >=85%, test edge cases like malformed ages, complex interests phrases.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:57.333Z"
+        "subtasks": [],
+        "updatedAt": "2025-12-26T08:30:15.649Z"
       },
       {
-        "id": "76",
-        "title": "Implement Fan Profile Personalization Prompt Injection",
-        "description": "Inject structured fan_profile summary and topics_covered into prompts for natural referencing.",
-        "details": "In get_phase_prompt(memory): profile_summary = '; '.join([f'{k}: {v}' for k,v in memory.fan_profile.items() if v]); topics = ', '.join(memory.topics_covered); return base + f'\\nYou know about him: {profile_summary}\\nTopics covered: {topics}\\nReference naturally without forcing.'. Add update_topics_covered(topic: str) to ConversationMemory. After profile update, memory.topics_covered.append(extract_topic(key)) where extract_topic maps 'name':'personal', 'location':'location', etc. Cap topics at 10 unique.",
-        "testStrategy": "Prompt inspection tests: test_profile_injection_format(), test_topics_listed_correctly(). Human eval: bot references profile naturally 70%+ of time when relevant.",
+        "id": "181",
+        "title": "Add comprehensive error handling and server hardening",
+        "description": "Implement graceful error handling for all failure modes: bad requests, LLM failures, file I/O errors, existing module exceptions.",
+        "details": "Wrap entire /chat logic in try/except. Specific handlers: ValidationError -> 422, LLMClient failures -> 503 with retry info, File I/O errors -> 500 log but don't crash, Existing module exceptions -> 500 generic error. Add request logging. Implement max conversation length (truncate old messages if >50). Add CORS if needed for phone automation. Graceful shutdown on SIGTERM.",
+        "testStrategy": "Chaos testing: kill llm_client.py dependencies, corrupt JSON files, send malformed requests, network failures to Claude API. Verify server stays up, returns appropriate HTTP codes, logs errors, doesn't lose data. Load test: 100 concurrent requests to same user_id.",
         "priority": "medium",
         "dependencies": [
-          "73",
-          "75"
+          "180"
         ],
         "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Define extract_topic Mapping Function",
-            "description": "Create a function that maps fan profile keys to standardized topic strings like 'name' to 'personal', 'location' to 'location'.",
-            "dependencies": [],
-            "details": "Implement def extract_topic(key: str) -> str with a dictionary mapping common keys: {'name': 'personal', 'location': 'location', 'favorite_team': 'sports', 'age': 'personal', 'occupation': 'personal'}. Add fallback to key itself if unmapped. Ensure function is pure and testable.",
-            "status": "pending",
-            "testStrategy": "Unit test: test_extract_topic_known_keys(), test_extract_topic_unknown_key_fallback(). Verify 100% coverage of example mappings.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement update_topics_covered Method",
-            "description": "Add update_topics_covered(topic: str) method to ConversationMemory class to append topics while capping at 10 unique entries.",
-            "dependencies": [],
-            "details": "In ConversationMemory: def update_topics_covered(self, topic: str): self.topics_covered.append(topic); self.topics_covered = list(dict.fromkeys(self.topics_covered))[-10:]. Ensure topics_covered is initialized as [] in dataclass. Call self.last_active = now_iso() on update.",
-            "status": "pending",
-            "testStrategy": "Unit tests: test_append_single_topic(), test_maintain_uniqueness(), test_cap_at_10_topics(), test_trims_oldest_first().",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Integrate Topic Extraction in Profile Updates",
-            "description": "Modify update_profile method to automatically extract and update topics_covered after profile changes.",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "In ConversationMemory.update_profile(key: str, value: Any): super().update_profile(key, value); topic = extract_topic(key); if value: self.update_topics_covered(topic). Only append if value is truthy/non-empty to avoid noise from deletions.",
-            "status": "pending",
-            "testStrategy": "Integration test: test_profile_update_triggers_topic_append(), test_skips_empty_values(), test_topic_capping_with_profile_updates().",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement get_phase_prompt with Profile Injection",
-            "description": "Update get_phase_prompt(memory: ConversationMemory) to inject formatted fan_profile summary and topics_covered.",
-            "dependencies": [
-              2
-            ],
-            "details": "def get_phase_prompt(memory: ConversationMemory, base: str) -> str: profile_summary = '; '.join([f'{k}: {v}' for k,v in memory.fan_profile.items() if v]); topics = ', '.join(memory.topics_covered); return base + f'\\nYou know about him: {profile_summary}\\nTopics covered: {topics}\\nReference naturally without forcing.'",
-            "status": "pending",
-            "testStrategy": "Unit tests: test_profile_injection_format_empty(), test_profile_injection_populated(), test_topics_listed_correctly_empty_full(). String matching assertions.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add Prompt Inspection Test Functions",
-            "description": "Create test_profile_injection_format() and test_topics_listed_correctly() to validate prompt generation.",
-            "dependencies": [
-              4
-            ],
-            "details": "In tests: test_profile_injection_format() mocks memory with sample fan_profile, asserts correct semicolon-separated summary in prompt. test_topics_listed_correctly() tests comma-joined topics with cap. Include edge cases: empty lists, max cap, non-empty values only.",
-            "status": "pending",
-            "testStrategy": "Run full test suite: pytest -v test_prompt_injection.py. Target 100% pass rate. Manual human eval setup for natural referencing (70%+ target).",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:57.650Z"
-      },
-      {
-        "id": "77",
-        "title": "Add State Management and Phase Tracking to Memory",
-        "description": "Implement state.phase, of_mentioned, rapport_level tracking synced with conversation flow.",
-        "details": "Extend ConversationMemory with state: dict per schema. Update phase via simple rules: opener->location after location extracted, etc. Increment rapport_level +=1 after 3+ exchanges, cap 5. Track of_mentioned=True when 'onlyfans' in response.lower(), meetup_requests +=1 on keywords. Update in IGChatbot after each exchange: memory.state['conversation_count'] +=1; memory.state['phase'] = next_phase(memory.state['phase'], message, response). Persist in to_dict().",
-        "testStrategy": "State transition tests: test_phase_progression_sequence(), test_rapport_increment(), test_of_detection_accuracy(). Assert state persists across sessions.",
-        "priority": "medium",
-        "dependencies": [
-          "72",
-          "73"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Extend ConversationMemory with State Schema",
-            "description": "Add state dictionary field to ConversationMemory dataclass following the required schema for phase tracking and metrics.",
-            "dependencies": [],
-            "details": "Use Pydantic field validator to ensure state dict contains keys: phase (str), conversation_count (int=0), rapport_level (int=0), of_mentioned (bool=False), meetup_requests (int=0). Initialize in __post_init__ with defaults. Update to_dict() and from_dict() to serialize/deserialize state.",
-            "status": "pending",
-            "testStrategy": "Unit test state schema validation, serialization roundtrip, default initialization.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement next_phase State Transition Function",
-            "description": "Create next_phase(current_phase: str, message: str, response: str) -> str function with simple rules for phase progression.",
-            "dependencies": [],
-            "details": "Define rules: 'opener' -> 'location' after location extracted from message/response; increment rapport_level after 3+ exchanges (check conversation_count); set of_mentioned=True if 'onlyfans' in response.lower(); increment meetup_requests on keywords like 'meet', 'date', 'hangout'. Cap rapport_level at 5.",
-            "status": "pending",
-            "testStrategy": "Test phase transitions with mock message/response sequences, rapport increment logic, keyword detection accuracy.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add State Update Methods to ConversationMemory",
-            "description": "Implement methods to update state.phase, increment conversation_count, rapport_level, track of_mentioned and meetup_requests.",
-            "dependencies": [
-              1
-            ],
-            "details": "Add update_state(phase: str=None, conversation_count_delta: int=1, etc.) method that applies changes atomically. Call from add_message() to increment conversation_count. Ensure auto-trim doesn't affect state dict. Update last_active timestamp on state mutations.",
-            "status": "pending",
-            "testStrategy": "Test state mutations preserve integrity, increments work correctly, capping logic for rapport_level.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Integrate State Updates into IGChatbot Respond Method",
-            "description": "Wire state tracking into IGChatbot.respond(): increment conversation_count, update phase using next_phase(message, response).",
-            "dependencies": [
-              2,
-              3
-            ],
-            "details": "After LLM response generation: memory.state['conversation_count'] += 1; memory.state['phase'] = next_phase(memory.state['phase'], message, response); memory.update_state_from_phase(memory.state['phase']). Call before memory_manager.save_memory(memory).",
-            "status": "pending",
-            "testStrategy": "Integration test: simulate conversation exchanges, assert state updates correctly after each respond call.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add State Persistence and Session Recovery Tests",
-            "description": "Ensure state persists via to_dict() across sessions and add comprehensive state transition tests.",
-            "dependencies": [
-              1,
-              3,
-              4
-            ],
-            "details": "Verify to_dict() includes full state dict serialization. Implement test_phase_progression_sequence() with multi-turn conversation, test_rapport_increment() for 3+ exchange threshold, test_of_detection_accuracy() with keyword variations. Test state recovery from persisted memory.",
-            "status": "pending",
-            "testStrategy": "End-to-end tests: full conversation flow with persistence, mock IGChatbot restarts, assert state continuity and correct metrics.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:58.000Z"
-      },
-      {
-        "id": "78",
-        "title": "Comprehensive Testing and Success Metrics Validation",
-        "description": "Add automated tests measuring repetition rate, conversation length, human-likeness against success metrics.",
-        "details": "Create test_conversations.py with 20 scripted fan convos (avg 15 turns). Measure: repetition_rate = repeated_phrases/total_phrases <5%, avg_length >15, manual human_likeness_score 1-10. Use pytest with pytest-mock. Test edge cases: fan returns after 30 days (continue memory), 100-message cap, phrase deduping. Add load test: 100 concurrent fans. Profile save/load latency <100ms.",
-        "testStrategy": "Automated metric tests: assert repetition_rate(fan_convo) < 0.05, assert avg_length(all_convos) > 15. Run 1000 iterations, fail if metrics miss targets. Manual review 10% sample.",
-        "priority": "medium",
-        "dependencies": [
-          "74",
-          "76",
-          "77"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create test_conversations.py with 20 Scripted Fan Conversations",
-            "description": "Develop a pytest module containing 20 scripted fan-bot conversations averaging 15 turns each, simulating realistic fan interactions for metric validation.",
-            "dependencies": [],
-            "details": "Define conversation scripts as lists of dicts with role/content pairs. Use pytest fixtures to load IGChatbot with pytest-mock for LLM responses. Ensure diversity in topics, fan behaviors, and edge cases like long-term memory recall.",
-            "status": "pending",
-            "testStrategy": "Verify each convo loads without errors: assert len(convo) == expected_turns. Run pytest on fixture setup.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Implement Core Success Metrics Calculation Functions",
-            "description": "Add functions to compute repetition_rate (<5%), average conversation length (>15 turns), and placeholder for human_likeness_score (1-10 scale).",
-            "dependencies": [
-              1
-            ],
-            "details": "repetition_rate(convo): count repeated_phrases/total_phrases using difflib.SequenceMatcher(ratio>0.8). avg_length(all_convos): mean(len(c) for c in convos). human_likeness_score: initial manual stub returning 5.0, later integrate LLM judge.",
-            "status": "pending",
-            "testStrategy": "Unit tests: assert repetition_rate(mock_repetitive_convo) > 0.05, assert repetition_rate(mock_unique_convo) < 0.05, assert avg_length([15-turn, 16-turn]) == 15.5.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Add pytest Tests for Edge Cases and Success Metric Assertions",
-            "description": "Write tests validating edge cases: 30-day fan return with memory continuity, 100-message cap enforcement, phrase deduping, with assertions on metrics.",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "Mock datetime for 30-day gap test: assert memory continues correctly. Test trim to 100 messages/50 phrases. Run 1000 iterations: fail if any metric misses targets (repetition<5%, length>15). Use hypothesis for randomization.",
-            "status": "pending",
-            "testStrategy": "pytest-mock patches: test_memory_continuity_after_30days(), test_enforce_100_msg_cap(), test_phrase_deduping(). Assert metrics post-run.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Implement Load Test for 100 Concurrent Fans",
-            "description": "Create concurrent load test simulating 100 fans running scripted conversations simultaneously, measuring overall system performance.",
-            "dependencies": [
-              1
-            ],
-            "details": "Use pytest with pytest-xdist or concurrent.futures.ThreadPoolExecutor. Each thread runs a full convo script. Assert no failures, collect aggregate metrics across all sessions.",
-            "status": "pending",
-            "testStrategy": "pytest test_load_100_concurrent: assert all_convos_metrics satisfy thresholds. Time total execution, log failures.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Add Profiling for Save/Load Latency and Manual Review Process",
-            "description": "Profile ConversationMemory save/load operations to ensure <100ms latency; document manual human_likeness review for 10% convo sample.",
-            "dependencies": [
-              2,
-              3
-            ],
-            "details": "Use cProfile or line_profiler on memory.to_dict()/from_dict(). Assert p95 latency <100ms over 1000 runs. Create manual_review.py to score 2 convos (10%) on 1-10 scale, average >7 target.",
-            "status": "pending",
-            "testStrategy": "Automated: assert profile_latency('save') < 0.1s. Manual: Run test suite, review output convos, log scores to validate human_likeness >7.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2025-12-23T09:29:58.331Z"
+        "subtasks": [],
+        "updatedAt": "2025-12-26T08:30:15.652Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-23T09:29:58.331Z",
-      "taskCount": 8,
-      "completedCount": 8,
+      "lastModified": "2025-12-26T08:30:15.652Z",
+      "taskCount": 6,
+      "completedCount": 6,
       "tags": [
         "master"
       ]
